@@ -5,6 +5,7 @@ import { handleHarmReduction } from './routes/harmReduction.js';
 import { handleCalendarFeed } from './routes/calendarFeed.js';
 import { handleGo } from './routes/go.js';
 import { handleRobots } from './routes/robots.js';
+import { handleManifest } from './routes/manifest.js';
 import { adminRouter } from './routes/admin/router.js';
 import { handleSubmitForm, handleSubmitConfirmation, handleSubmissionApi, handleVenueCheck } from './routes/submit.js';
 import { handleEditPage, handleEditLoad, handleEditUpdate, handleEditCancel, handleEditRemoval } from './routes/edit.js';
@@ -32,6 +33,7 @@ export async function router(request, env) {
   if (path === '/') return handleHome(request, env);
   if (path === '/admin' || path.startsWith('/admin/')) return adminRouter(request, env);
   if (path === '/robots.txt') return handleRobots();
+  if (path === '/manifest.webmanifest') return handleManifest();
   if (path === '/calendar.ics') return handleCalendarFeed(request, env);
   if (path === '/look-after-each-other') return handleHarmReduction(request, env);
   if (path === '/archive') return handleArchive(request, env);

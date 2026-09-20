@@ -7,6 +7,16 @@ export const config = {
 
   slogan: 'No social media? - The info you need, for those with no feed',
 
+  // Home screen label for the installed app, and the <meta name="apple-
+  // mobile-web-app-title">. Kept short on purpose: a phone launcher
+  // truncates much past about 12 characters.
+  shortName: 'CBR DANCE',
+
+  // Browser chrome colour (the phone status bar and task switcher on an
+  // installed app, the tab strip on desktop). Matches --wall-base in
+  // public/css/style.css; change both together.
+  themeColour: '#2b2a27',
+
   // Board column labels, section 7.1. Defaults from the spec, "Been and
   // gone" renamed to "Past events" per owner request.
   boardColumns: {

@@ -27,6 +27,12 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
   <meta name="description" content="${config.slogan}">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="${config.themeColour}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="${config.shortName}">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="stylesheet" href="/css/style.css">
   ${raw(extraHead)}
 </head>
@@ -54,6 +60,7 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
   <script src="/js/edit-form.js" defer></script>
   <script src="/js/crew-dashboard.js" defer></script>
   <script src="/js/contact-form.js" defer></script>
+  <script src="/js/sw-register.js" defer></script>
 </body>
 </html>`;
 }

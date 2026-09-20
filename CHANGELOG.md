@@ -78,6 +78,44 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Added
+- The site is installable to a phone or desktop home screen: a web app
+  manifest at `/manifest.webmanifest`, app icons generated from the vinyl
+  favicon (192, 512, a maskable 512 for Android launchers that crop to
+  their own shape, and a 180px `apple-touch-icon`), a `theme-color` for
+  the phone status bar and task switcher, and the iOS standalone meta
+  tags. Installed, it opens full screen with no address bar, which gives
+  the board back the chrome's worth of height.
+  The manifest is built by the Worker (`src/routes/manifest.js`) rather
+  than sat in `public/` as a static file, so its name, short name and
+  description come straight from `config.js` instead of being a second
+  copy to drift out of sync with it, and so its Content-Type is exactly
+  `application/manifest+json` rather than whatever the asset server
+  infers from an unusual file extension. `config.js` gains `shortName`
+  and `themeColour` for it; icons live in `public/icons/`, beside the SVG
+  sources they are generated from.
+  Only the public shell gets any of this. The admin panel is behind
+  Cloudflare Access and served `no-store`, so it has no business being
+  installable, and `js/sw-register.js` bails on `/admin` as well.
+- A service worker (`public/sw.js`), deliberately doing almost nothing.
+  It caches an allowlist of two immutable directories, `/fonts/` and
+  `/textures/`, and passes everything else straight to the network. The
+  fonts are 106KB, the heaviest thing the site ships and unchanging for a
+  given file, so serving them from cache is what makes a second visit
+  paint immediately.
+  It is not an offline mode, on purpose: the site's value is listings
+  that change, and a cached board would be worse than no board, because
+  nothing on screen would tell you it was a week old. Anyone needing an
+  event's address with no reception is better served by the "Add to
+  calendar" link, which already puts an .ics in the phone's own calendar.
+  Being an allowlist rather than a blocklist, it cannot cache anything
+  private by accident: `/admin`, `/crew`, `/edit` and every `/api` route
+  are untouched without being named, and stay untouched as routes are
+  added later. No HTML is cached, so nobody is served a stale page and
+  the server-side view counts in `lib/analytics.js` stay accurate. CSS
+  and JS are excluded too: they are small and their filenames carry no
+  version, so caching them would buy 66KB at the cost of one stale load
+  after every deploy. `sw.js` carries kill-switch instructions in its own
+  header comment.
 - A favicon: a vinyl record in the site palette, as
   `public/favicon.svg` (with `public/favicon-32.png` as a raster fallback
   for browsers that don't take an SVG icon). Toner-black disc, paper
