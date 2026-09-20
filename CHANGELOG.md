@@ -277,6 +277,23 @@ after deployment.
 Every visual change to the generated flyer engine, in order. See
 `FLYER_ENGINE_VERSION` in `src/flyers/index.js`.
 
+- **0.12.0** - `contour`'s no-geocoded-venue map is now a procedurally
+  generated heightfield (`diamondSquareGrid`, a seeded diamond-square/
+  midpoint-displacement fractal) run through the exact same upsample +
+  marching-squares pipeline as a real venue's, replacing the old
+  hand-parameterised sine-wobble rings. Owner report: the wobble rings
+  were smooth at every scale by construction, so a generated map was easy
+  to pick out as fake sitting next to a real venue's contours on the same
+  board -- diamond-square's genuine multi-scale roughness (a coarse
+  hill/valley shape plus smaller bumps and dents riding on it) reads as
+  the genuine article instead. Also: the event's own name (e.g.
+  "Dub.Sept") now reads at 60px/weight 800, just ahead of the headliner's
+  56px (previously 20px, sharing a size with the smaller presenter line
+  and reading smaller than the DJ names below it -- owner report); the
+  presenter line moved from 20px to 22px, just ahead of a support act's
+  16-19px range, completing an explicit four-tier hierarchy (event name >
+  headliner > presenter > support acts) instead of the previous
+  three-size ad hoc set.
 - **0.9.1** - The `scrap` (board/archive thumbnail) size budget raised
   again, from 20KB to 60KB (now matching `page`/`social`/`print`).
   Measuring actual worst-case output showed 20KB, picked without

@@ -433,51 +433,86 @@ function renderRealTerrain(ctx, rawGrid) {
   return { contourLines, markerX: marker.x, markerY: marker.y, labelDir };
 }
 
-/** The original fully-synthetic version: seeded wobble rings around a seeded centre. */
-function renderSyntheticTerrain(ctx) {
-  const { canvas, palette, random, surface } = ctx;
-  // Same thumbnail-budget reasoning as terrainDetailFor for real terrain
-  // -- fewer, coarser rings on the scrap surface, well below what's
-  // perceptible at a 200px-wide board card anyway.
-  const isScrap = surface === 'scrap';
-  const contourCount = (isScrap ? 6 : 8) + Math.floor(random() * (isScrap ? 3 : 5));
-  const highlighted = Math.floor(random() * contourCount);
-  const harmonics = [1 + Math.floor(random() * 3), 2 + Math.floor(random() * 3)];
-  const amp = range(random, 40, 90);
-  const phaseX = random() * Math.PI * 2;
-  const phaseY = random() * Math.PI * 2;
-  const cx = canvas.centerX + range(random, -100, 100);
-  const cy = canvas.centerY + range(random, -100, 100);
+// Grid size for a procedurally faked "elevation" surface -- deliberately
+// matching PROCEDURAL_GRID_SIZE to geocode.js's real 9x9 resolution (must
+// be 2^n+1 for diamondSquareGrid's recursive halving to land on exact
+// integer cells), so the no-venue path runs through the exact same
+// upsample/marching-squares pipeline as a real one at the same starting
+// resolution, rather than a separately tuned approximation of it.
+const PROCEDURAL_GRID_SIZE = 9;
+// Amplitude decay per octave. Real terrain keeps meaningful roughness at
+// small scales (that's what made the old sine-wobble rings -- smooth at
+// every scale by construction -- read as obviously fake next to a real
+// venue's contours, owner report). Below ~0.5 the fine octaves dominate
+// and it reads as noise instead of terrain; this keeps the coarse shape
+// (the first one or two octaves) recognisable while still leaving visible
+// bumps and dents at the finer ones.
+const DIAMOND_SQUARE_ROUGHNESS = 0.62;
 
-  let contourLines = '';
-  let markerX = cx;
-  let markerY = cy;
-  for (let c = 0; c < contourCount; c++) {
-    const baseRadius = 120 + c * 90;
-    const isHighlight = c === highlighted;
-    let d = '';
-    const samples = isScrap ? 40 : 72;
-    for (let i = 0; i <= samples; i++) {
-      const t = (i / samples) * Math.PI * 2;
-      const wobble = amp * (Math.sin(t * harmonics[0] + phaseX) + Math.sin(t * harmonics[1] + phaseY)) / 2;
-      const r = baseRadius + wobble;
-      const x = cx + r * Math.cos(t);
-      const y = cy + r * Math.sin(t);
-      d += `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)} `;
+/**
+ * A square diamond-square (midpoint displacement) heightfield, seeded from
+ * the event's own PRNG -- same algorithm family real terrain-generation
+ * tools use, so the result has genuine multi-scale roughness (a coarse
+ * hill/valley shape plus smaller bumps riding on it) instead of a single
+ * smooth frequency. Returns the same `{ size, values }` shape geocode.js's
+ * real grids use, so it can go through upsampleGrid/marchingSquaresSegments
+ * completely unchanged.
+ * @param {() => number} random
+ * @param {number} size - must be 2^n + 1
+ */
+function diamondSquareGrid(random, size) {
+  const n = size - 1;
+  const values = new Array(size * size).fill(0);
+  const at = (r, c) => values[r * size + c];
+  const set = (r, c, v) => { values[r * size + c] = v; };
+
+  set(0, 0, range(random, -1, 1));
+  set(0, n, range(random, -1, 1));
+  set(n, 0, range(random, -1, 1));
+  set(n, n, range(random, -1, 1));
+
+  let step = n;
+  let amplitude = 1;
+  while (step > 1) {
+    const half = step / 2;
+
+    for (let r = half; r < size; r += step) {
+      for (let c = half; c < size; c += step) {
+        const avg = (at(r - half, c - half) + at(r - half, c + half) + at(r + half, c - half) + at(r + half, c + half)) / 4;
+        set(r, c, avg + range(random, -amplitude, amplitude));
+      }
     }
-    const color = isHighlight ? palette.accent : palette.paper;
-    const width = isHighlight ? 2.5 : 1;
-    const opacity = isHighlight ? 1 : 0.35;
-    contourLines += `<path d="${d}Z" fill="none" stroke="${color}" stroke-width="${width}" opacity="${opacity}"/>`;
-    if (isHighlight) {
-      const labelAngle = range(random, 0, Math.PI * 2);
-      markerX = cx + baseRadius * Math.cos(labelAngle);
-      markerY = cy + baseRadius * Math.sin(labelAngle);
+
+    for (let r = 0; r < size; r += half) {
+      for (let c = (r + half) % step; c < size; c += step) {
+        let sum = 0;
+        let count = 0;
+        if (r - half >= 0) { sum += at(r - half, c); count++; }
+        if (r + half < size) { sum += at(r + half, c); count++; }
+        if (c - half >= 0) { sum += at(r, c - half); count++; }
+        if (c + half < size) { sum += at(r, c + half); count++; }
+        set(r, c, sum / count + range(random, -amplitude, amplitude));
+      }
     }
+
+    step = half;
+    amplitude *= DIAMOND_SQUARE_ROUGHNESS;
   }
-  // No local gradient concept in the synthetic version -- keeps the
-  // original placement, to the right of the marker.
-  return { contourLines, markerX, markerY, labelDir: 'right' };
+
+  return { size, values };
+}
+
+/**
+ * The no-real-venue path: a procedurally faked elevation grid run through
+ * the exact same renderRealTerrain used for a geocoded venue (owner
+ * report: the old hand-parameterised wobble rings were too smooth at
+ * every scale to pass for a real venue's contours next to one on the
+ * same board). "venueElevation" here is just the fake grid's own centre
+ * value, same as a real grid's centre is the actual geocoded point.
+ */
+function renderSyntheticTerrain(ctx) {
+  const { random } = ctx;
+  return renderRealTerrain(ctx, diamondSquareGrid(random, PROCEDURAL_GRID_SIZE));
 }
 
 export default {
