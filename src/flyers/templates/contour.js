@@ -173,7 +173,7 @@ const CAP_HEIGHT_RATIO = 0.72;
 // just ahead of a headliner act; the presenter line reads just ahead of
 // a support act's name (which fits at up to 19, see fitNamesBlock's call
 // in buildActsBlock).
-const HEADLINER_SIZE = 56;
+const HEADLINER_SIZE = 50;
 const EVENT_TITLE_SIZE = 66;
 const PRESENTER_SIZE = 22;
 

@@ -217,18 +217,19 @@ test('contour masks the contour lines behind the headliner and venue label, snug
   const result = render({ ...FIXTURES.full, flyer_template: 'contour' }, { now: FIXTURE_NOW });
 
   const headliner = FIXTURES.full.lineup.split('\n')[0].toUpperCase();
-  const headlinerWidth = measure(headliner, { font: 'archivo', size: 56 });
-  // The event title now renders at the same weight/size as the headliner
-  // (owner request: it used to read smaller than the DJ names), so it
-  // also matches a bare "first weight-800 mask" regex -- anchor on the
-  // headliner's own text so this doesn't grab the title's box instead.
+  const headlinerSize = 50;
+  const headlinerWidth = measure(headliner, { font: 'archivo', size: headlinerSize });
+  // The event title also renders at weight 800 (bigger than the
+  // headliner, so it also matches a bare "first weight-800 mask" regex)
+  // -- anchor on the headliner's own text so this doesn't grab the
+  // title's box instead.
   const headlinerRect = result.svg.match(new RegExp(`<rect x="([\\d.]+)" y="([\\d.]+)" width="([\\d.]+)" height="([\\d.]+)" fill="#0a0a0a"/><text[^>]*font-weight="800"[^>]*>${headliner}</text>`));
   assert.ok(headlinerRect, 'no mask rect found immediately before the headliner text');
   const [, , , hw, hh] = headlinerRect;
   assert.ok(Math.abs(Number(hw) - (headlinerWidth + 20)) < 2, `headliner mask width ${hw} is not snug to the measured text width (${headlinerWidth.toFixed(1)} + padding)`);
   // Cap height (0.72em) plus padding, not the full font size plus
   // padding -- a looser box would read as a generic band, not text-snug.
-  assert.ok(Math.abs(Number(hh) - (56 * 0.72 + 20)) < 2, `headliner mask height ${hh} is not the expected cap-height-plus-padding figure`);
+  assert.ok(Math.abs(Number(hh) - (headlinerSize * 0.72 + 20)) < 2, `headliner mask height ${hh} is not the expected cap-height-plus-padding figure`);
 
   const venueRect = result.svg.match(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="#0a0a0a"\/><text[^>]*font-size="37"/);
   assert.ok(venueRect, 'no mask rect found immediately before the venue label text');

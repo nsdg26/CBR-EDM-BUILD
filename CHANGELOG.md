@@ -277,6 +277,8 @@ after deployment.
 Every visual change to the generated flyer engine, in order. See
 `FLYER_ENGINE_VERSION` in `src/flyers/index.js`.
 
+- **0.12.2** - `contour`'s headliner size dropped from 56px to 50px,
+  owner request, widening the gap under the event name (66px).
 - **0.12.1** - `contour`'s event name bumped from 60px to 66px, owner
   request: still ahead of the headliner's 56px, just more clearly so.
 - **0.12.0** - `contour`'s no-geocoded-venue map is now a procedurally
