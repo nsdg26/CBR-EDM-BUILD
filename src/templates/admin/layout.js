@@ -18,7 +18,12 @@ const NAV = [
  * @param {{ title: string, bodyContent: string, email: string, now?: Date }} options
  */
 export function adminLayout({ title, bodyContent, email, now = new Date() }) {
-  const showReminderBanner = now >= new Date('2027-04-01T00:00:00Z');
+  // Date and copy both come from config.reminderBanner (config.js), which
+  // used to declare them while this file hardcoded its own copy of each --
+  // so editing the config did nothing.
+  const banner = config.reminderBanner;
+  const showReminderBanner = Boolean(banner?.text)
+    && now >= new Date(`${banner.fromDate}T00:00:00Z`);
 
   return html`<!doctype html>
 <html lang="en-AU">
@@ -36,7 +41,7 @@ export function adminLayout({ title, bodyContent, email, now = new Date() }) {
     <span>Signed in as ${email}</span>
   </header>
   ${showReminderBanner
-    ? html`<p class="admin-banner">CanTEST funding was due to end June 2027. Check the service is still running.</p>`
+    ? html`<p class="admin-banner">${banner.text}</p>`
     : ''}
   <main>
     ${raw(bodyContent)}

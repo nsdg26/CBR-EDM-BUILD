@@ -1,5 +1,5 @@
-import { html } from '../lib/escape.js';
-import { canberraDayKey, canberraWeekdayIndex, monthLabel, WEEKDAYS_SHORT } from '../lib/dates.js';
+import { html, raw } from '../lib/escape.js';
+import { canberraDayKey, canberraWeekdayIndex, formatDayKey, monthLabel, WEEKDAYS_SHORT } from '../lib/dates.js';
 
 /**
  * Renders the month calendar grid, section 7.1. Works without JavaScript:
@@ -38,8 +38,8 @@ export function calendar(events, year, month, now = new Date()) {
         <tbody>
           ${weeks.map((week) => html`<tr>
             ${week.map((day) => day
-              ? html`<td class="${day.isToday ? 'is-today' : ''}">${day.hasEvents
-                  ? html`<a href="#day-${day.key}" aria-label="${day.count} event${day.count === 1 ? '' : 's'} on ${day.key}${day.isToday ? ', today' : ''}" ${day.isToday ? html`aria-current="date"` : ''}>${day.dayOfMonth}</a>`
+              ? html`<td${day.isToday ? raw(' class="is-today"') : ''}>${day.hasEvents
+                  ? html`<a href="#day-${day.key}" aria-label="${day.count} event${day.count === 1 ? '' : 's'} on ${formatDayKey(day.key)}${day.isToday ? ', today' : ''}" ${day.isToday ? html`aria-current="date"` : ''}>${day.dayOfMonth}</a>`
                   : day.isToday
                     ? html`<span aria-current="date">${day.dayOfMonth}<span class="sr-only"> (today)</span></span>`
                     : html`<span aria-hidden="true">${day.dayOfMonth}</span>`}</td>`
@@ -51,7 +51,7 @@ export function calendar(events, year, month, now = new Date()) {
     ${Object.keys(eventsByDay).length
       ? html`<div class="calendar-day-lists">
           ${Object.entries(eventsByDay).map(([dayKey, dayEvents]) => html`<div id="day-${dayKey}">
-            <h3>${dayKey}</h3>
+            <h3>${formatDayKey(dayKey)}</h3>
             <ul class="link-list">
               ${dayEvents.map((event) => html`<li><a href="/e/${event.slug}">${event.title || 'Untitled event'}</a></li>`)}
             </ul>

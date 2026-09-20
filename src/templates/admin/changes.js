@@ -1,4 +1,5 @@
 import { html } from '../../lib/escape.js';
+import { formatShortDate } from '../../lib/dates.js';
 
 const LABELS = {
   edit: 'Proposed edit',
@@ -20,9 +21,9 @@ export function changeListPage(changes) {
   return html`
     <h1>Pending changes and requests</h1>
     ${changes.length ? '' : html`<p class="muted">Nothing pending.</p>`}
-    ${changes.map((change) => html`<div style="border-bottom: 2px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+    ${changes.map((change) => html`<div class="admin-record">
       <h2>${LABELS[change.kind] || change.kind}: ${change.event_title || 'Untitled'}</h2>
-      <p class="muted">Via ${change.via}, ${change.created_at.slice(0, 10)}</p>
+      <p class="muted">Via ${change.via}, ${formatShortDate(change.created_at)}</p>
       ${change.reason ? html`<p>Reason given: ${change.reason}</p>` : ''}
       ${change.kind === 'edit' ? renderComparison(change) : ''}
       <div class="actions">

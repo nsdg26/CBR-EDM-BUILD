@@ -1,5 +1,5 @@
 // Deterministic seed and PRNG for the flyer engine. Non-negotiable 1 in
-// PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 3: same event ID, same event
+// FLYER-ENGINE-SPEC.md section 3: same event ID, same event
 // data, same engine version must always produce a byte-identical SVG. No
 // Math.random(), no Date.now(), anywhere in the render path.
 

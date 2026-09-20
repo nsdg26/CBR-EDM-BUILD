@@ -1,4 +1,4 @@
-// Font width tables and text measurement, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md
+// Font width tables and text measurement, FLYER-ENGINE-SPEC.md
 // section 4.4. Workers have no measureText and SVG does not wrap text, so
 // every template fits its own text using these tables, built ahead of time
 // by scripts/build-font-metrics.js from the site's actual WOFF2 files.

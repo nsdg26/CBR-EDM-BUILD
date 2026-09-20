@@ -19,7 +19,7 @@ export async function handleAdminQueue(request, env, admin) {
   const body = html`
     <h1>Queue</h1>
     ${staleLinks.n > 0
-      ? html`<p class="error">${staleLinks.n} harm reduction link(s) have not been checked in over 90 days. <a href="/admin/harm-reduction">Review them</a>.</p>`
+      ? html`<p class="error">${staleLinks.n} harm reduction link${staleLinks.n === 1 ? '' : 's'} ${staleLinks.n === 1 ? 'has' : 'have'} not been checked in over 90 days. <a href="/admin/harm-reduction">Review ${staleLinks.n === 1 ? 'it' : 'them'}</a>.</p>`
       : ''}
     <table>
       <tbody>

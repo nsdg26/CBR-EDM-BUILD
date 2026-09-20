@@ -3,7 +3,7 @@ import { resolveTemplate } from '../flyers/manifest.js';
 import { normaliseEvent, flyerDataHash } from '../flyers/normalise.js';
 
 /**
- * GET /flyer/:eventId.svg. PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 4.2.
+ * GET /flyer/:eventId.svg. FLYER-ENGINE-SPEC.md section 4.2.
  * Standalone raw-SVG access to a generated flyer (the board and event page
  * inline the SVG directly instead of fetching this, section 4.5). Only
  * for published events -- a generated flyer is not published data until

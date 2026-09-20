@@ -6,6 +6,36 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Site-wide consistency pass over the public pages and the admin panel
+  (owner request). Real rendering bugs it turned up:
+  - A horizontal scrollbar on the home page. The calendar's screen-reader
+    "(today)" note is a `<span>` inside a day cell's `<span>`, so the
+    `.calendar td span` rule (display: flex, min-height: 44px, width:
+    100%) out-specified `.sr-only` and handed the hidden element a ~440px
+    width. Absolutely positioned, it then stretched the document past the
+    viewport. `.sr-only` now wins wherever it lands.
+  - The printable poster (`/poster`) running off the side of a phone
+    screen: the sheet is sized in real millimetres (A4 is ~794px), so it
+    always overflowed a narrow viewport. The on-screen preview now scales
+    to fit (`public/js/poster-scale.js`); print output is untouched, since
+    the transform lives in a screen-only media query.
+  - Dates in admin lists, the calendar's per-day headings and the harm
+    reduction "last checked" note were the raw stored ISO string sliced to
+    `YYYY-MM-DD`. That is both a format the rest of the site never uses
+    and the *UTC* calendar date, so anything stored between midnight and
+    10am Canberra time displayed a day early. These now go through
+    `formatShortDate`/`formatDayKey` in `src/lib/dates.js` and read as
+    e.g. "2 Sep 2026", in Canberra time.
+  - Every `<label>` on the admin harm reduction screen was bare: no `for`,
+    and not wrapping its input either, so none of them were associated
+    with a field at all (no click-to-focus, nothing announced).
+  - The event page's `<h1>` carries `.scrap-title`, which out-specified
+    the global `h1` rule and left the page's main heading at card size
+    (20px) rather than page size (28px).
+  - `config.reminderBanner` (both its date and its copy) was declared in
+    `config.js` but ignored: `templates/admin/layout.js` hardcoded its own
+    duplicate of each, so editing the config did nothing. Same behaviour
+    as before, now actually driven by the config.
 - Public event submissions (`POST /api/submissions`) failing outright,
   every time: the INSERT listed 30 columns but its VALUES tuple supplied
   only 29 -- `elevation_grid` had no value at all -- so D1 rejected every
@@ -43,6 +73,36 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Changed
+- Styling and formatting consistency, same pass:
+  - Every one-off inline `style="..."` in a template is now a class in the
+    relevant stylesheet. The three admin list screens had each rolled
+    their own divider and drifted to two different border widths; they
+    share `.admin-record` now.
+  - `h3` had no rule at all in `style.css`, so every h3 on the site fell
+    back to the browser default beside display-face h1s and h2s.
+  - The submit form's "18+" checkbox borrowed `.lineup-row-headliner`, a
+    DJ-row class, purely for its layout -- and with it a `font-weight:
+    400` that made its label lighter than the checkbox label directly
+    above it in the same form.
+  - Buttons disabled mid-request (submit, contact) looked identical to
+    live ones; they now dim.
+  - A crew profile's two sections were labelled "Coming up" / "Been and
+    gone" while the home page's identical two read "Coming up" / "Past
+    events" from `config.boardColumns`. Both read from the config now.
+  - `.calendar-day-lists` was rendered but never styled, so each day's
+    heading butted against the previous day's last event. The event page's
+    ticket/ICS/report links were bare `<p>`s with 1em default margins
+    among `.scrap-meta` lines spaced 0.15rem apart, and harm reduction
+    entries had the same problem.
+  - Crew directory cards are `.scrap` like event cards but had no tape.
+  - Every comment in `src/` and `public/` pointed at
+    `PROJECT-C-EDM-FLYER-ENGINE-SPEC.md` / `PROJECT-C-EDM-SPEC.md`; the
+    files are `FLYER-ENGINE-SPEC.md` and `SPEC.md`.
+  - Dead `.flyer-compare-grid` rule dropped from `admin.css` (the compare
+    grid itself went on 2026-09-13). Stats' two "top events" tables gained
+    the `<thead>` every other admin table has. The admin queue's "link(s)"
+    now pluralises the way the rest of the site does. The crew dashboard's
+    smooth scroll honours `prefers-reduced-motion`.
 - Step 3 of the submit form, owner request: each DJ row is now Name ->
   Set time -> Genre -> Headliner -> Remove, all in one row, replacing
   the standalone full-width Genre field and the old combined "genre/set

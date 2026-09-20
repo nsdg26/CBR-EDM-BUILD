@@ -94,7 +94,7 @@ export function submitFormPage(turnstileSiteKey, crewNames = []) {
             <p class="muted">If your crew is trusted, this publishes the event straight away.</p>
           </details>
 
-          <div class="field" style="border-top: 2px solid var(--border); padding-top: 1rem;">
+          <div class="field field--separated">
             <label for="submitter_contact">Your contact details (optional)</label>
             <input type="text" id="submitter_contact" name="submitter_contact">
             <p class="muted">Optional. Only the site admin sees this. It is never published.</p>
@@ -138,8 +138,10 @@ export function submitConfirmationPage() {
     <div data-edit-link-holder hidden>
       <p><strong>Save this link. It is the only way to change or cancel your listing.</strong></p>
       <p>Anyone with the link can suggest changes, so do not post it publicly.</p>
-      <p><input type="text" readonly data-edit-link-value style="width: 100%;"></p>
-      <button type="button" data-copy-edit-link>Copy link</button>
+      <p><input type="text" readonly data-edit-link-value class="input-full" aria-label="Your private edit link"></p>
+      <div class="actions">
+        <button type="button" data-copy-edit-link>Copy link</button>
+      </div>
       <p data-copy-status role="status"></p>
     </div>
     <noscript><p class="error">Your private edit link could not be shown because JavaScript is off. Please contact the admin if you need to change this listing.</p></noscript>

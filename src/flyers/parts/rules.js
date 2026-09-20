@@ -1,4 +1,4 @@
-// Hairline dividers, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 6.
+// Hairline dividers, FLYER-ENGINE-SPEC.md section 6.
 
 /**
  * @param {object} ctx

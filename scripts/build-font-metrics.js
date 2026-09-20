@@ -1,5 +1,5 @@
 // Builds font metrics tables for the flyer engine, section 4.4 of
-// PROJECT-C-EDM-FLYER-ENGINE-SPEC.md. Workers have no measureText and SVG
+// FLYER-ENGINE-SPEC.md. Workers have no measureText and SVG
 // has no text wrapping, so the renderer measures text itself, using these
 // tables instead of parsing font files at request time.
 //

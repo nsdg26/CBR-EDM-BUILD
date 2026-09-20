@@ -47,13 +47,15 @@ export function editPage() {
 
       ${FIELD_DEFS_AFTER_LINEUP.map(renderField)}
 
-      <div class="field">
+      <div class="field field-checkbox">
         <label><input type="checkbox" name="location_tba" id="location_tba" value="1"> Location TBA</label>
       </div>
 
       ${ageRestrictionField()}
 
-      <button type="submit">Save changes</button>
+      <div class="actions">
+        <button type="submit">Save changes</button>
+      </div>
       <p data-edit-save-status role="status"></p>
     </form>
 

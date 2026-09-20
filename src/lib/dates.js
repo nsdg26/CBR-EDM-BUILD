@@ -127,6 +127,35 @@ function canberraLocalToUtc(wallClockAsUtc) {
 }
 
 /**
+ * A short Canberra-local date for a UTC ISO timestamp, e.g. "20 Sep 2026".
+ * Used wherever a stored timestamp is shown as a plain date (admin lists,
+ * "last checked" notes) instead of an event's own date-and-time line.
+ * Slicing the first 10 characters off the ISO string, as these callers
+ * used to, showed the UTC calendar date -- a day out for anything stored
+ * between midnight and 10am Canberra time -- in a format the rest of the
+ * site never uses.
+ * @param {string|null} isoUtc
+ */
+export function formatShortDate(isoUtc) {
+  if (!isoUtc) return '';
+  const parts = toCanberraParts(isoUtc);
+  return `${parts.day} ${MONTHS_SHORT[parts.month - 1]} ${parts.year}`;
+}
+
+/**
+ * The same short date, from a YYYY-MM-DD Canberra day key (as built by
+ * canberraDayKey) rather than a UTC timestamp: the calendar's per-day
+ * headings, which have a local calendar day and no time at all.
+ * @param {string} dayKey
+ */
+export function formatDayKey(dayKey) {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  const iso = `${dayKey}T12:00:00Z`; // midday UTC is always the same Canberra day
+  const weekday = WEEKDAYS_SHORT[canberraWeekdayIndex(iso)];
+  return `${weekday} ${day} ${MONTHS_SHORT[month - 1]} ${year}`;
+}
+
+/**
  * The Monday-start weekday index (0 = Monday) for a UTC ISO string's
  * Canberra local date. Used to lay out the calendar grid.
  */

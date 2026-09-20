@@ -1,4 +1,4 @@
-// The status stamp, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 6 and 11:
+// The status stamp, FLYER-ENGINE-SPEC.md section 6 and 11:
 // always topmost, always last, never covers the date. Only the five
 // statuses the main spec defines.
 

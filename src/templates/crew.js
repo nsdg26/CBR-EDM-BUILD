@@ -28,14 +28,18 @@ export function crewDashboardPage(turnstileSiteKey) {
         <input type="password" id="crew-key" name="key" autocomplete="off">
       </div>
       <div class="cf-turnstile" data-sitekey="${turnstileSiteKey}"></div>
-      <button type="submit">Sign in</button>
+      <div class="actions">
+        <button type="submit">Sign in</button>
+      </div>
       <p data-login-status role="status"></p>
       <noscript><p class="error">The crew dashboard needs JavaScript, since your key is never sent as part of a normal page load.</p></noscript>
     </form>
 
     <div data-crew-area hidden>
       <p data-crew-greeting></p>
-      <button type="button" data-crew-signout class="secondary">Sign out</button>
+      <div class="actions">
+        <button type="button" data-crew-signout class="secondary">Sign out</button>
+      </div>
 
       <div data-crew-profile hidden>
         <h2>Your crew profile</h2>
@@ -47,7 +51,9 @@ export function crewDashboardPage(turnstileSiteKey) {
           <label for="crew-links">Links (one per line, as "label, url")</label>
           <textarea id="crew-links" data-profile-field="links"></textarea>
         </div>
-        <button type="button" data-crew-save-profile>Save profile</button>
+        <div class="actions">
+          <button type="button" data-crew-save-profile>Save profile</button>
+        </div>
         <p data-crew-profile-status role="status"></p>
       </div>
 
@@ -57,7 +63,9 @@ export function crewDashboardPage(turnstileSiteKey) {
       <h2>Add an event</h2>
       ${eventFieldsMarkup('create')}
       ${flyerPickerMarkup('create', { withReroll: false })}
-      <button type="button" data-crew-create>Add event</button>
+      <div class="actions">
+        <button type="button" data-crew-create>Add event</button>
+      </div>
       <p data-crew-create-status role="status"></p>
     </div>
 
@@ -91,7 +99,7 @@ function flyerPickerMarkup(scope, { withReroll }) {
   return html`<div data-crew-flyer data-scope="${scope}" hidden>
     <h3>Generated flyer</h3>
     <p class="muted">Real terrain is fetched automatically for a disclosed venue; mark the event Location TBA to keep the map procedural.</p>
-    <img data-crew-flyer-preview alt="Generated flyer preview" style="max-width: 300px; display: block;">
+    <img data-crew-flyer-preview alt="Generated flyer preview" class="flyer-preview">
     <div class="field">
       <label for="${scope}-flyer-template">Template</label>
       <select id="${scope}-flyer-template" data-crew-flyer-template></select>

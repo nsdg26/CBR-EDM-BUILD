@@ -1,6 +1,7 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { html } from '../../lib/escape.js';
 import { notFound } from '../../lib/http.js';
+import { formatShortDate } from '../../lib/dates.js';
 
 function page(admin, body) {
   return new Response(String(adminLayout({ title: 'Contact messages', bodyContent: body, email: admin.email })), {
@@ -14,8 +15,8 @@ export async function handleContactMessageList(request, env, admin) {
   const body = html`
     <h1>Contact messages</h1>
     ${results.length ? '' : html`<p class="muted">Nothing here yet.</p>`}
-    ${results.map((msg) => html`<div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
-      <p class="muted">${msg.created_at.slice(0, 10)}${msg.state === 'done' ? html` (done)` : ''}</p>
+    ${results.map((msg) => html`<div class="admin-record">
+      <p class="muted">${formatShortDate(msg.created_at)}${msg.state === 'done' ? ' (done)' : ''}</p>
       ${msg.name ? html`<p><strong>${msg.name}</strong></p>` : ''}
       ${msg.reply_contact ? html`<p>Reply to: ${msg.reply_contact}</p>` : ''}
       <p>${msg.message}</p>

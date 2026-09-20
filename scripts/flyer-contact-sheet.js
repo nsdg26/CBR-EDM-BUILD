@@ -1,5 +1,5 @@
 // Renders every flyer template against every fixture and writes an HTML
-// contact sheet for visual review. PROJECT-C-EDM-FLYER-ENGINE-SPEC.md
+// contact sheet for visual review. FLYER-ENGINE-SPEC.md
 // section 14: "This is the single most useful thing you can build here."
 // Run after any change to the engine: node scripts/flyer-contact-sheet.js
 

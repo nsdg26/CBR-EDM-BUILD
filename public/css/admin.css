@@ -132,10 +132,59 @@ button.danger, .button.danger {
   border-color: var(--danger);
 }
 
+button:disabled, .button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+/* One entry in a stacked admin list -- a pending change, a contact
+   message, a harm reduction link's edit form. These were three separate
+   inline styles that had drifted to two different border widths (2px on
+   the changes screen, 1px on the other two); one class keeps the
+   dividers identical everywhere. */
+.admin-record {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* The inbound email body: plain text, wrapped, in the page's own font so
+   it doesn't read as code. Was an inline style. */
+.admin-pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  background: #fff;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  margin: 0 0 1rem;
+}
+
+/* A search box and its button side by side. Plain .field is a column, so
+   the search button stretched full width under the input, which on this
+   one small form read as a page-wide action rather than part of the
+   box above it. */
+.admin-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.admin-search label {
+  flex: 1 1 100%;
+}
+
+.admin-search input {
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .muted {
@@ -176,6 +225,13 @@ button.danger, .button.danger {
 /* DJ rows, section 9.1 rework: name, set time, genre, a headliner
    checkbox and a remove button, all in one row -- mirrors style.css so
    the admin event form matches the public submit/edit forms. */
+/* The lineup field's group label. Not a <label> element: it labels a
+   group of DJ rows, not one input, so it carries the same weight as a
+   real field label without claiming to be one. */
+.lineup-label {
+  font-weight: bold;
+}
+
 .lineup-row {
   display: flex;
   flex-wrap: wrap;
@@ -214,11 +270,17 @@ button.danger, .button.danger {
   min-height: auto;
 }
 
-/* Generated flyer preview and compare grid, FLYER-ENGINE-SPEC.md section
-   13: the inlined SVG has no width/height attribute, only a viewBox, so
-   without this it renders at the browser's 300x150 SVG default. */
-.generated-flyer-preview svg,
-.flyer-compare-grid svg {
+/* Generated flyer preview, FLYER-ENGINE-SPEC.md section 13: the inlined
+   SVG has no width/height attribute, only a viewBox, so without this it
+   renders at the browser's 300x150 SVG default. The .flyer-compare-grid
+   selector that used to sit alongside this one is gone with the compare
+   grid itself -- see the note in templates/admin/events.js. */
+.generated-flyer-preview {
+  max-width: 300px;
+  margin-bottom: 1rem;
+}
+
+.generated-flyer-preview svg {
   width: 100%;
   height: auto;
   display: block;

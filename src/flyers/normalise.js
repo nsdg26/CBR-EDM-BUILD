@@ -1,5 +1,5 @@
 // Normalises a raw D1 event row into the flyer data contract,
-// PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 5. This is the only file in
+// FLYER-ENGINE-SPEC.md section 5. This is the only file in
 // the flyer engine that knows about the events table's actual columns.
 
 import { toCanberraParts } from '../lib/dates.js';

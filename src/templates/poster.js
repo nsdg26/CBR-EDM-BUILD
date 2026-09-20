@@ -113,11 +113,39 @@ export function posterPage(homeUrl, size) {
       height: ${mm(45)};
     }
 
+    /* On screen only: the sheet is a fixed real-world width (A4 is 210mm,
+       roughly 794px), so on a phone it ran well off the right edge and put
+       a horizontal scrollbar on the page. Scaling it down to fit the
+       viewport keeps the whole poster visible as a preview. The print
+       rules below are untouched, so what actually prints is still the
+       sheet at its true size. */
+    @media screen {
+      .sheet-scaler {
+        overflow: hidden;
+      }
+
+      .sheet {
+        /* top left, not top center: the sheet's layout box is wider than
+           the viewport it's being scaled into, so scaling about its centre
+           leaves the shrunken sheet sitting out to the right of the
+           container, where overflow: hidden then clips it. */
+        transform: scale(var(--sheet-scale, 1));
+        transform-origin: top left;
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+
     @media print {
       @page { size: ${dimensions.label}; margin: 0; }
       body { background: none; }
       .screen-only { display: none; }
       .sheet { margin: 0; }
+      /* poster-scale.js sets an inline height on the scaler to match the
+         shrunken on-screen sheet. That height is meaningless once the
+         transform is gone, so clear it rather than let it drive page
+         breaks. */
+      .sheet-scaler { overflow: visible; height: auto !important; }
     }
   </style>
 </head>
@@ -126,12 +154,15 @@ export function posterPage(homeUrl, size) {
     <p>Print size: ${dimensions.label}. <a href="/poster?size=${otherSize}">Switch to ${SIZES[otherSize].label}</a></p>
     <button type="button" data-print-button>Print</button>
   </div>
-  <div class="sheet">
-    <h1>${config.siteName}</h1>
-    <p>${config.slogan}</p>
-    ${raw(qrSvg)}
-    <p>${homeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</p>
+  <div class="sheet-scaler">
+    <div class="sheet">
+      <h1>${config.siteName}</h1>
+      <p>${config.slogan}</p>
+      ${raw(qrSvg)}
+      <p>${homeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</p>
+    </div>
   </div>
+  <script src="/js/poster-scale.js" defer></script>
   <script src="/js/poster-print.js" defer></script>
 </body>
 </html>`;

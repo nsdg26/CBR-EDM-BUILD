@@ -1,5 +1,6 @@
 import { html } from '../lib/escape.js';
 import { eventCard } from './eventCard.js';
+import { config } from '../config.js';
 
 /**
  * GET /crews. Section 16: all listed crews, alphabetical, each a small
@@ -11,6 +12,7 @@ export function crewsDirectoryPage(crews) {
     <h1>Crews</h1>
     ${crews.length
       ? html`<ul class="card-list">${crews.map((crew) => html`<li class="scrap">
+          <span class="scrap-tape" aria-hidden="true"></span>
           <h2 class="scrap-title"><a href="/crews/${crew.slug}">${crew.name}</a></h2>
           ${crew.blurb ? html`<p class="scrap-meta">${crew.blurb}</p>` : ''}
           <p class="scrap-meta">${crew.eventCount} event${crew.eventCount === 1 ? '' : 's'}</p>
@@ -41,12 +43,12 @@ export function crewProfilePage(crew, upcoming, past) {
       ? html`<ul class="link-list">${links.map((link) => html`<li><a href="${link.url}">${link.label}</a></li>`)}</ul>`
       : ''}
 
-    <h2>Coming up</h2>
+    <h2>${config.boardColumns.upcoming}</h2>
     ${upcoming.length
       ? html`<ul class="card-list">${upcoming.map((event) => eventCard(event))}</ul>`
       : html`<p class="muted">Nothing coming up right now.</p>`}
 
-    <h2>Been and gone</h2>
+    <h2>${config.boardColumns.past}</h2>
     ${past.length
       ? html`<ul class="card-list">${past.map((event) => eventCard(event))}</ul>`
       : html`<p class="muted">No past events yet.</p>`}

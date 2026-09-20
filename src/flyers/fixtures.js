@@ -1,4 +1,4 @@
-// Flyer engine test fixtures, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 14.
+// Flyer engine test fixtures, FLYER-ENGINE-SPEC.md section 14.
 // Shaped like a raw `events` row (optionally joined with crews.name AS
 // crew_name), since that's what render() takes. Used by both
 // scripts/flyer-contact-sheet.js and test/flyers.test.js so the two never

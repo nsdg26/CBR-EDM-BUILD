@@ -1,4 +1,4 @@
-// Template registry and genre routing, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md
+// Template registry and genre routing, FLYER-ENGINE-SPEC.md
 // section 8.
 //
 // Owner decision (2026-09-13, then again 2026-09-14): stick purely to the

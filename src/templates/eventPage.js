@@ -35,14 +35,14 @@ export function eventPage(event, now = new Date()) {
       ${venueText ? html`<p class="scrap-meta">${venueText}</p>` : ''}
       ${event.genres ? html`<p class="scrap-meta">${event.genres}</p>` : ''}
       ${lineupActs.length
-        ? html`<ul class="link-list">${lineupActs.map((act) => html`<li>${act.headliner ? html`<strong>${act.name}</strong>` : act.name}${act.note ? ` (${act.note})` : ''}</li>`)}</ul>`
+        ? html`<ul class="scrap-lineup">${lineupActs.map((act) => html`<li>${act.headliner ? html`<strong>${act.name}</strong>` : act.name}${act.note ? ` (${act.note})` : ''}</li>`)}</ul>`
         : ''}
-      ${event.ticket_url ? html`<p><a href="/go/${event.id}">Tickets</a></p>` : ''}
+      ${event.ticket_url ? html`<p class="scrap-meta"><a href="/go/${event.id}">Tickets</a></p>` : ''}
       ${event.age_restriction === '18+' ? html`<p class="scrap-meta">18+</p>` : ''}
       ${stamp ? html`<p class="stamp">${stamp}</p>` : ''}
-      ${event.notes ? html`<p>${event.notes}</p>` : ''}
-      <p><a href="/e/${event.slug}.ics">Add to calendar</a></p>
-      <p><a href="/contact?event=${event.id}">Something wrong with this listing?</a></p>
+      ${event.notes ? html`<p class="scrap-notes">${event.notes}</p>` : ''}
+      <p class="scrap-meta"><a href="/e/${event.slug}.ics">Add to calendar</a></p>
+      <p class="scrap-meta"><a href="/contact?event=${event.id}">Something wrong with this listing?</a></p>
       <p class="scrap-meta"><a href="/look-after-each-other">${config.harmReductionTitle}</a></p>
     </article>
   `;

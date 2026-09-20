@@ -1,4 +1,4 @@
-// The flyer engine's public entry point. PROJECT-C-EDM-FLYER-ENGINE-SPEC.md
+// The flyer engine's public entry point. FLYER-ENGINE-SPEC.md
 // section 4.7: this must never break a page. contour is now the only
 // template (see manifest.js), so it is its own fallback -- if it throws,
 // or produces an invalid or oversized composition, this returns null and

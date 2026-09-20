@@ -52,8 +52,8 @@ export function renderLineupRows(lineup) {
  * @param {{ initialRowsHtml?: string, genres?: string|null }} [options]
  */
 export function lineupField(options = {}) {
-  return html`<div class="field field-lineup">
-    <label>Lineup</label>
+  return html`<div class="field field-lineup" role="group" aria-labelledby="lineup-label">
+    <span class="lineup-label" id="lineup-label">Lineup</span>
     <div data-lineup-rows>${raw(options.initialRowsHtml || '')}</div>
     ${lineupRowTemplate()}
     <input type="hidden" name="lineup" data-lineup-value>
@@ -76,8 +76,8 @@ export function lineupField(options = {}) {
  *   listing and a legacy event with no age_restriction set yet start ticked
  */
 export function ageRestrictionField(checked = true) {
-  return html`<div class="field">
-    <label class="lineup-row-headliner"><input type="checkbox" name="age_restriction" id="age_restriction" value="18+" ${checked ? raw('checked') : ''}> 18+</label>
+  return html`<div class="field field-checkbox">
+    <label><input type="checkbox" name="age_restriction" id="age_restriction" value="18+" ${checked ? raw('checked') : ''}> 18+</label>
     <input type="hidden" name="age_restriction" value="all_ages">
     <p class="muted">Untick for all ages.</p>
   </div>`;

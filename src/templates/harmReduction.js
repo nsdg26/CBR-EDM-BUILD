@@ -1,5 +1,6 @@
 import { html } from '../lib/escape.js';
 import { config } from '../config.js';
+import { formatShortDate } from '../lib/dates.js';
 
 const REGIONS = ['ACT', 'NSW', 'National'];
 
@@ -20,11 +21,11 @@ export function harmReductionPage(links, intro) {
       return html`
         <h2>${region}</h2>
         <ul class="link-list">
-          ${regionLinks.map((link) => html`<li>
-            <p>${link.url ? html`<a href="${link.url}">${link.title}</a>` : link.title}</p>
+          ${regionLinks.map((link) => html`<li class="hr-link">
+            <h3>${link.url ? html`<a href="${link.url}">${link.title}</a>` : link.title}</h3>
             ${link.description ? html`<p>${link.description}</p>` : ''}
             ${link.phone ? html`<p>${link.phone}</p>` : ''}
-            <p>Last checked: ${link.last_checked_at.slice(0, 10)}</p>
+            <p class="muted">Last checked: ${formatShortDate(link.last_checked_at)}</p>
           </li>`)}
         </ul>
       `;

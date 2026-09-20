@@ -15,7 +15,7 @@ function navLinks() {
 /**
  * The shared page shell: header with site name and slogan, footer with the
  * required links (section 6), and a slot for page content.
- * @param {{ title: string, bodyContent: string, activeNav?: string, extraHead?: string, bodyClass?: string }} options
+ * @param {{ title: string, bodyContent: string, extraHead?: string, bodyClass?: string }} options
  */
 export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
   return html`<!doctype html>

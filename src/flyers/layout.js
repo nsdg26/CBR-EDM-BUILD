@@ -1,5 +1,5 @@
 // Text wrapping, size fitting, and grid geometry for the flyer engine,
-// PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 4.4 and 4.6.
+// FLYER-ENGINE-SPEC.md section 4.4 and 4.6.
 
 import { measure } from './metrics.js';
 

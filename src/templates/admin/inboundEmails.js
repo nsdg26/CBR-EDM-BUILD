@@ -1,4 +1,5 @@
 import { html } from '../../lib/escape.js';
+import { formatShortDate } from '../../lib/dates.js';
 
 /**
  * GET /admin/inbound-emails. Section 10.6.
@@ -14,7 +15,7 @@ export function inboundEmailListPage(emails) {
         ${emails.map((email) => html`<tr>
           <td>${email.from_address}</td>
           <td>${email.subject || '(no subject)'}</td>
-          <td>${email.received_at.slice(0, 10)}</td>
+          <td>${formatShortDate(email.received_at)}</td>
           <td>${email.state}</td>
           <td><a href="/admin/inbound-emails/${email.id}">View</a></td>
         </tr>`)}
@@ -38,8 +39,8 @@ export function inboundEmailViewPage(email) {
 
   return html`
     <h1>${email.subject || '(no subject)'}</h1>
-    <p class="muted">From ${email.from_address}, received ${email.received_at.slice(0, 10)}</p>
-    <pre style="white-space: pre-wrap; font-family: inherit; background: #fff; padding: 1rem; border: 1px solid var(--border);">${email.text_body || ''}</pre>
+    <p class="muted">From ${email.from_address}, received ${formatShortDate(email.received_at)}</p>
+    <pre class="admin-pre">${email.text_body || ''}</pre>
 
     ${attachments.length
       ? html`<h2>Attachments</h2>${attachments.map((attachment, index) => html`<p>

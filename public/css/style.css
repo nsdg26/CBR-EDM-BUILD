@@ -23,7 +23,7 @@
 }
 
 @font-face {
-  /* The flyer engine's monospace face, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md
+  /* The flyer engine's monospace face, FLYER-ENGINE-SPEC.md
      section 10. Only used inside generated flyer SVGs. */
   font-family: 'JetBrains Mono';
   src: url('/fonts/jetbrains-mono.woff2') format('woff2');
@@ -219,7 +219,7 @@ select:focus-visible {
   border-radius: var(--radius);
 }
 
-/* The global `a { color: var(--paper) }` rule below is for the dark wall
+/* The global `a { color: var(--paper) }` rule above is for the dark wall
    background -- on a scrap's own paper-coloured background it left every
    link (Tickets, Add to calendar, Something wrong with this listing?, Look
    after each other) the same colour as the card itself, invisible except
@@ -246,6 +246,16 @@ select:focus-visible {
   text-decoration: none;
 }
 
+/* .scrap .scrap-title is sized for a card in a list (--text-h3). The event
+   page reuses the same class on its real page <h1>, where that specificity
+   beat the global h1 rule and left the page's main heading smaller than
+   the h1 on every other page. */
+.scrap h1.scrap-title {
+  font-size: var(--text-h2);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .scrap .scrap-title a:hover {
   text-decoration: underline;
 }
@@ -254,6 +264,21 @@ select:focus-visible {
   font-size: var(--text-small);
   margin: 0.15rem 0;
   color: #3a3835;
+}
+
+/* Free paragraphs inside a card (an event's notes): the browser's 1em
+   default margin is far too much next to .scrap-meta's 0.15rem. */
+.scrap-notes {
+  margin: 0.75rem 0;
+}
+
+/* The event page's full lineup. A list inside a card, so tighter than
+   .link-list, which is for standalone links out on the dark wall. */
+.scrap-lineup {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0.5rem 0;
+  font-size: var(--text-small);
 }
 
 .scrap-tape {
@@ -306,6 +331,27 @@ select:focus-visible {
 .card-list {
   display: grid;
   gap: 1.25rem;
+}
+
+/* One harm reduction entry: a heading, optional description and phone,
+   and a "last checked" note. These used to be four bare <p>s, whose 1em
+   default margins spaced the lines within an entry further apart than
+   .link-list's 0.5rem gap spaced the entries themselves. */
+.hr-link {
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.hr-link p {
+  margin: 0;
+}
+
+.hr-link h3 {
+  margin: 0;
+  font-size: var(--text-h3);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 /* A plain list of links or short text entries with no card of their own
@@ -529,6 +575,19 @@ select:focus-visible {
   font-weight: 800;
 }
 
+/* The per-day event lists under the calendar grid: rendered by
+   calendar.js but never given any spacing, so each day's heading butted
+   straight up against the previous day's last event. */
+.calendar-day-lists {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.calendar-day-lists h3 {
+  margin: 0 0 0.35rem;
+}
+
 /* Footer, section 6 */
 .site-footer {
   border-top: 1px solid rgba(217, 216, 210, 0.2);
@@ -562,6 +621,18 @@ h2 {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-h3);
+}
+
+/* h3 had no rule at all, so the calendar's per-day headings and the crew
+   dashboard's sub-headings fell back to the body font at the browser's
+   default size -- a different type system to the h1/h2 sitting right
+   beside them. Same family and weight as h2, one step down in size. */
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-body);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .field {
@@ -622,6 +693,16 @@ button.danger,
   color: var(--paper);
 }
 
+/* The submit and contact forms disable their button while a request is in
+   flight, but nothing said so visually -- the button looked exactly as it
+   had a moment earlier, just silently unresponsive. */
+button:disabled,
+.button:disabled,
+button[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .actions {
   display: flex;
   gap: 0.75rem;
@@ -671,13 +752,46 @@ button.danger,
   font-size: var(--text-small);
 }
 
+/* A field set apart from the ones above it by a rule -- the submit form's
+   private contact details, which section 9.1 wants visually separate from
+   the public fields. Was an inline style on that one field. */
+.field--separated {
+  border-top: 2px solid var(--border);
+  padding-top: 1rem;
+}
+
+/* A read-only input the visitor is meant to copy out of (the one-time edit
+   link on the submission confirmation page): full width, since the value
+   is a long URL. Was an inline style. */
+.input-full {
+  width: 100%;
+}
+
+/* A generated-flyer thumbnail on a form (the crew dashboard's preview),
+   as opposed to .generated-flyer, which is the full-width inlined SVG on
+   a card or event page. Was an inline style. */
+.flyer-preview {
+  display: block;
+  max-width: 300px;
+  width: 100%;
+  height: auto;
+}
+
+/* Visually hidden, still read out. !important because this has to win
+   wherever it lands: the calendar's "(today)" note sits inside a day
+   cell's <span>, and `.calendar td span` (two classes and an element)
+   out-specifies a bare `.sr-only`, so it was handing this element that
+   rule's display: flex, min-height: 44px and width: 100%. Absolutely
+   positioned, it then stretched roughly 440px past the right edge of the
+   page and put a horizontal scrollbar on the home page. */
 .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
@@ -725,6 +839,13 @@ details.field summary {
    normal desktop viewport, so the field wrapping the rows gets more room. */
 .field-lineup {
   max-width: 56rem;
+}
+
+/* The lineup field's group label. Not a <label> element: it labels a
+   group of DJ rows, not one input, so it carries the same weight as a
+   real field label without claiming to be one. */
+.lineup-label {
+  font-weight: 600;
 }
 
 .lineup-row {

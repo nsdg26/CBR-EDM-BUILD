@@ -1,4 +1,4 @@
-// Material palette for generated flyers, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md
+// Material palette for generated flyers, FLYER-ENGINE-SPEC.md
 // section 9. Inherits the site's material colours; adds a one-per-flyer
 // accent set. No gradients, ever -- tonal variation comes from halftone or
 // dither, not from blending these colours.

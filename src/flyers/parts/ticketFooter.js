@@ -1,4 +1,4 @@
-// The shared bottom band, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 6:
+// The shared bottom band, FLYER-ENGINE-SPEC.md section 6:
 // age restriction, doors and close, ticket text, harm reduction mark.
 // Used by contour, the only template left in the codebase (the other
 // nine that used to share this were removed, see manifest.js). Height

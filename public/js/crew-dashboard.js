@@ -55,6 +55,13 @@
     }).then(function (response) { return response.json(); });
   }
 
+  // The stylesheet's prefers-reduced-motion block turns off CSS
+  // transitions, but a JS smooth scroll isn't a transition, so it has to
+  // check the same setting itself.
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
   function renderEventList(events) {
     eventList.textContent = '';
     events.forEach(function (event) {
@@ -70,7 +77,7 @@
         editStatus.textContent = '';
         editFlyerStatus.textContent = '';
         loadFlyer(event.id);
-        editArea.scrollIntoView({ behavior: 'smooth' });
+        editArea.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
       });
       li.appendChild(link);
       eventList.appendChild(li);

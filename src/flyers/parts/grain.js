@@ -1,4 +1,4 @@
-// Toner/photocopy grain, PROJECT-C-EDM-FLYER-ENGINE-SPEC.md section 6.
+// Toner/photocopy grain, FLYER-ENGINE-SPEC.md section 6.
 // Rendered as a tiling pattern rather than a full-canvas filter, since a
 // full-canvas filter is expensive to rasterise. Never placed over text.
 

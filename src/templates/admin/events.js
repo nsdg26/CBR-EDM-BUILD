@@ -1,6 +1,7 @@
 import { html, raw } from '../../lib/escape.js';
 import { render as renderFlyer } from '../../flyers/index.js';
 import { lineupField, renderLineupRows, ageRestrictionField } from '../lineupRow.js';
+import { formatShortDate } from '../../lib/dates.js';
 
 /**
  * GET /admin/events. List with search by title, section 10.2.
@@ -10,7 +11,7 @@ import { lineupField, renderLineupRows, ageRestrictionField } from '../lineupRow
 export function eventListPage(events, query) {
   return html`
     <h1>Events</h1>
-    <form method="get" class="field">
+    <form method="get" class="admin-search">
       <label for="q">Search by title</label>
       <input type="search" id="q" name="q" value="${query || ''}">
       <button type="submit">Search</button>
@@ -23,7 +24,7 @@ export function eventListPage(events, query) {
       <tbody>
         ${events.map((event) => html`<tr>
           <td>${event.title || 'Untitled'}</td>
-          <td>${event.start_at ? event.start_at.slice(0, 10) : '-'}</td>
+          <td>${event.start_at ? formatShortDate(event.start_at) : '-'}</td>
           <td>${event.visibility}</td>
           <td>${event.status}</td>
           <td><a href="/admin/events/${event.id}/edit">Edit</a></td>
@@ -196,7 +197,7 @@ function generatedFlyerSection(event) {
     </p>
 
     ${preview
-      ? html`<div class="generated-flyer-preview" style="max-width: 300px;">${raw(preview.svg)}</div>`
+      ? html`<div class="generated-flyer-preview">${raw(preview.svg)}</div>`
       : html`<p class="error">Could not render a flyer for this event.</p>`}
 
     <form method="post" action="/admin/events/${event.id}/reroll-flyer">

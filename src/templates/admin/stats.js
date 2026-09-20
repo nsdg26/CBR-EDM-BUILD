@@ -30,12 +30,18 @@ export function statsPage(totals, topByViews, topByClicks, perCrew) {
 
     <h2>Top events by views</h2>
     ${topByViews.length
-      ? html`<table><tbody>${topByViews.map((row) => html`<tr><td><a href="/e/${row.slug}">${row.title || 'Untitled'}</a></td><td>${row.count}</td></tr>`)}</tbody></table>`
+      ? html`<table>
+          <thead><tr><th>Event</th><th>Views</th></tr></thead>
+          <tbody>${topByViews.map((row) => html`<tr><td><a href="/e/${row.slug}">${row.title || 'Untitled'}</a></td><td>${row.count}</td></tr>`)}</tbody>
+        </table>`
       : html`<p class="muted">No data yet.</p>`}
 
     <h2>Top events by ticket clicks</h2>
     ${topByClicks.length
-      ? html`<table><tbody>${topByClicks.map((row) => html`<tr><td><a href="/e/${row.slug}">${row.title || 'Untitled'}</a></td><td>${row.count}</td></tr>`)}</tbody></table>`
+      ? html`<table>
+          <thead><tr><th>Event</th><th>Ticket clicks</th></tr></thead>
+          <tbody>${topByClicks.map((row) => html`<tr><td><a href="/e/${row.slug}">${row.title || 'Untitled'}</a></td><td>${row.count}</td></tr>`)}</tbody>
+        </table>`
       : html`<p class="muted">No data yet.</p>`}
 
     <h2>Per crew</h2>

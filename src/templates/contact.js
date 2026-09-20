@@ -26,7 +26,9 @@ export function contactFormPage(turnstileSiteKey, eventId) {
         <textarea id="message" name="message" required></textarea>
       </div>
       <div class="cf-turnstile" data-sitekey="${turnstileSiteKey}"></div>
-      <button type="submit">Send message</button>
+      <div class="actions">
+        <button type="submit">Send message</button>
+      </div>
       <p data-contact-status role="status"></p>
       <noscript><p class="error">This form needs JavaScript, since it checks you are not a robot.</p></noscript>
     </form>
