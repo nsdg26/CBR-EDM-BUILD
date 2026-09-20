@@ -38,18 +38,20 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
 </head>
 <body${bodyClass ? html` class="${bodyClass}"` : ''}>
   <header class="site-header">
-    <div class="hero-name-row">
-      <a href="/" class="site-name">
-        <img class="site-name-mark" src="/icons/record.svg" alt="" width="512" height="512">
-        <span>${config.siteName}</span>
-      </a>
-      <p class="slogan-strip">${config.slogan}</p>
+    <div class="site-header-inner">
+      <div class="hero-name-row">
+        <a href="/" class="site-name">
+          <img class="site-name-mark" src="/icons/record.svg" alt="" width="512" height="512">
+          <span>${config.siteName}</span>
+        </a>
+        <p class="slogan-strip">${config.slogan}</p>
+      </div>
+      <nav aria-label="Main">
+        <ul class="site-nav">
+          ${navLinks().map(([href, label]) => html`<li><a href="${href}">${label}</a></li>`)}
+        </ul>
+      </nav>
     </div>
-    <nav aria-label="Main">
-      <ul class="site-nav">
-        ${navLinks().map(([href, label]) => html`<li><a href="${href}">${label}</a></li>`)}
-      </ul>
-    </nav>
   </header>
   <main>
     ${raw(bodyContent)}

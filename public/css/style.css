@@ -139,10 +139,10 @@ select:focus-visible {
 }
 
 /* Header and slogan strip, section 13.3: the one loud element.
-   The header is a sibling of main, not inside it, so it needs a
-   max-width and auto margins of its own, or it spans the full window
-   while the content below is centred -- which is what left the site name
-   stranded against the left edge on a wide screen.
+   The band itself spans the full window, so that when it is stuck to the
+   top of the viewport (below) its background covers everything scrolling
+   underneath, right out to the edges. The content inside is what gets
+   capped and centred.
 
    One width on every page, not main's narrower inner-page width: the
    header holds a wordmark, a slogan and six nav links, and squeezing
@@ -151,10 +151,14 @@ select:focus-visible {
    share a centre line and read as deliberate even where the header is
    the wider of the two. */
 .site-header {
-  padding: 2.5rem 1.25rem 2rem;
+  padding: 2.5rem 0 2rem;
   text-align: left;
+}
+
+.site-header-inner {
   max-width: 1100px;
   margin: 0 auto;
+  padding: 0 1.25rem;
 }
 
 .site-header .site-name {
@@ -404,6 +408,24 @@ select:focus-visible {
 }
 
 @media (min-width: 1024px) {
+  /* The header stays put while the board scrolls under it, so the nav is
+     always a click away. Deliberately not below this width: the name,
+     slogan and six links stack into four or five rows on a phone, and a
+     frozen block that tall would eat most of the screen.
+
+     The band needs its own opaque background or the cards would show
+     through it. The texture tiles from the header's own top left rather
+     than the body's, but the grain is subtle enough that the seam is not
+     visible in practice. */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--wall-base);
+    background-image: url('/textures/concrete-grain.svg');
+    background-repeat: repeat;
+  }
+
   /* Name and slogan on one line, which is what makes this a header rather
      than two stacked blocks. nowrap on the row is what guarantees it: the
      name is flex: none and never shrinks, so the slogan takes whatever is

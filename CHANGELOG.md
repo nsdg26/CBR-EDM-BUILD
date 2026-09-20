@@ -185,6 +185,18 @@ All notable changes to this project are documented here. Format follows
   null, which auto-routes to contour.
 
 ### Changed
+- The header stays frozen at the top of the viewport while the page
+  scrolls, so the nav is always a click away (owner request). It used to
+  do this on the desktop home page only, as part of the old two-column
+  grid, and went with it.
+  The band now spans the full window with the content capped and centred
+  inside a `.site-header-inner` wrapper, rather than the header itself
+  being the capped box. A sticky element only paints its own background,
+  so a 1100px header would have let the cards show through on either
+  side of it as they scrolled past.
+  Frozen at 1024px and up only. Below that the name, slogan and six links
+  stack into four or five rows, and a block that tall stuck to the top
+  would eat most of a phone screen.
 - The calendar moved off the home page onto `/calendar`, its own page,
   reached from the nav (owner decision). The nav link that used to read
   "Subscribe to the calendar" and download the raw `.ics` now reads
