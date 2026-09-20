@@ -5,7 +5,7 @@
        record is inset to about 72% and sits on a full bleed wall coloured
        field that fills whatever the mask keeps.
 
-       Note for editors: see icon-source.svg on hyphens in XML comments. -->
+       Note for editors: see record.svg on hyphens in XML comments. -->
   <defs>
     <clipPath id="disc">
       <circle cx="256" cy="256" r="184"/>

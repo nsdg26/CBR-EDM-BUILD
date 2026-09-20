@@ -1,10 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Vinyl record">
-  <!-- Source art for the installed app icons. Same record as
-       /favicon.svg, drawn with the detail a home screen can actually show:
-       six grooves and fine strokes, where the favicon has two coarse ones
-       because anything finer aliases into grey mush at 16px.
+  <!-- The record, at size. Same mark as /favicon.svg, drawn with the
+       detail a large rendering can actually show: six grooves and fine
+       strokes, where the favicon has two coarse ones because anything
+       finer aliases into grey mush at 16px.
 
-       Regenerate the PNGs beside this file from it whenever it changes.
+       Used directly in the site header (templates/layout.js), and as the
+       source for the installed app icon PNGs beside this file, which need
+       regenerating whenever this changes.
 
        Note for editors: an XML comment may not contain two consecutive
        hyphens, so the repo's usual dash style is spelled with a colon or

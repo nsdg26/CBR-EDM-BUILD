@@ -169,6 +169,25 @@ select:focus-visible {
   margin: 0;
   white-space: nowrap;
   font-size: clamp(28px, 5vw, 64px);
+  /* inline-flex, not the inline-block set above, so the record and the
+     wordmark sit on a shared centre line rather than on the text
+     baseline, which would hang the disc below the letters. */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+}
+
+/* The record beside the wordmark. Sized in em so it tracks the site
+   name's own clamp() size instead of needing its own breakpoints, and
+   slightly over 1em because a circle reads smaller than the cap height
+   it sits next to. The width/height attributes on the <img> give the
+   browser the 1:1 ratio up front, so the header doesn't reflow when the
+   file lands: header-height.js measures this header to position the
+   sticky board headings, and it waits on fonts, not images. */
+.site-name-mark {
+  height: 1.08em;
+  width: auto;
+  flex: none;
 }
 
 .slogan-strip {

@@ -39,7 +39,10 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
 <body${bodyClass ? html` class="${bodyClass}"` : ''}>
   <header class="site-header">
     <div class="hero-name-row">
-      <a href="/" class="site-name">${config.siteName}</a>
+      <a href="/" class="site-name">
+        <img class="site-name-mark" src="/icons/record.svg" alt="" width="512" height="512">
+        <span>${config.siteName}</span>
+      </a>
       <p class="slogan-strip">${config.slogan}</p>
     </div>
     <nav aria-label="Main">

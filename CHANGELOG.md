@@ -78,6 +78,21 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Added
+- The record now sits in the site header too, to the left of the
+  wordmark and inside the same link home, so the mark on the tab, the
+  home screen and the page itself are all the one thing. Sized in `em` so
+  it tracks the site name's existing `clamp()` rather than needing its
+  own breakpoints, and a touch over 1em because a circle reads smaller
+  than the cap height beside it. The `<img>` carries width and height
+  attributes so the browser reserves the space before the file lands:
+  `header-height.js` measures this header to place the sticky board
+  headings, and it waits on fonts, not images. Verified no reflow with
+  the image artificially delayed.
+  The detailed art it uses was `icons/icon-source.svg`, named for its old
+  job of generating the app icon PNGs. It is `icons/record.svg` now that
+  a page renders it directly (`icons/record-maskable.svg` likewise). The
+  favicon keeps its own coarser drawing, which is what stays legible at
+  16px.
 - The site is installable to a phone or desktop home screen: a web app
   manifest at `/manifest.webmanifest`, app icons generated from the vinyl
   favicon (192, 512, a maskable 512 for Android launchers that crop to
