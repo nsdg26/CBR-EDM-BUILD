@@ -3,8 +3,11 @@ import { canberraDayKey, canberraWeekdayIndex, formatDayKey, monthLabel, WEEKDAY
 
 /**
  * Renders the month calendar grid, section 7.1. Works without JavaScript:
- * previous/next are plain links to ?month=YYYY-MM, and each day with
- * events links to that day's list further down the page via an anchor.
+ * previous/next are plain links to /calendar?month=YYYY-MM, and each day
+ * with events links to that day's list further down the page via an
+ * anchor. Lives on /calendar now rather than beside the home page board,
+ * so the month links no longer need the view=calendar marker that used to
+ * stop a reload dropping the visitor back onto the board.
  * @param {object[]} events - published, non-removed events with a start_at
  * @param {number} year
  * @param {number} month - 1-indexed
@@ -21,12 +24,12 @@ export function calendar(events, year, month, now = new Date()) {
   const prev = shiftMonth(year, month, -1);
   const next = shiftMonth(year, month, 1);
 
-  return html`<section class="calendar-panel">
+  return html`<section class="calendar-month">
     <div class="calendar">
       <nav class="calendar-nav" aria-label="Change month">
-        <a href="/?month=${monthParam(prev.year, prev.month)}&amp;view=calendar" aria-label="Previous month">&lt;</a>
+        <a href="/calendar?month=${monthParam(prev.year, prev.month)}" aria-label="Previous month">&lt;</a>
         <span class="calendar-nav-label">${monthLabel(year, month)}</span>
-        <a href="/?month=${monthParam(next.year, next.month)}&amp;view=calendar" aria-label="Next month">&gt;</a>
+        <a href="/calendar?month=${monthParam(next.year, next.month)}" aria-label="Next month">&gt;</a>
       </nav>
       <table>
         <caption class="sr-only">${monthLabel(year, month)}</caption>

@@ -3,6 +3,7 @@ import { html } from '../../lib/escape.js';
 const METRIC_LABELS = {
   home_view: 'Home page views',
   event_view: 'Event page views',
+  calendar_view: 'Calendar page views',
   ticket_click: 'Ticket clicks',
   ics_feed_fetch: 'Calendar feed fetches',
   ics_event_download: 'Single event .ics downloads',

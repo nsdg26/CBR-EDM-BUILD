@@ -54,7 +54,11 @@
   --text-small: 14px;
   --text-h3: 20px;
   --text-h2: 28px;
-  --text-h1: clamp(15px, 1.7vw, 26px);
+  /* The slogan strip. Capped where the slogan still fits beside the site
+     name on one line inside the header's 1100px: both sizes scale with
+     the viewport but their container stops growing at that point, so an
+     uncapped size overflows a box that still looks half empty. */
+  --text-h1: clamp(15px, 1.7vw, 23px);
 
   /* Shape and depth */
   --radius: 0;
@@ -134,10 +138,23 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Header and slogan strip, section 13.3: the one loud element. */
+/* Header and slogan strip, section 13.3: the one loud element.
+   The header is a sibling of main, not inside it, so it needs a
+   max-width and auto margins of its own, or it spans the full window
+   while the content below is centred -- which is what left the site name
+   stranded against the left edge on a wide screen.
+
+   One width on every page, not main's narrower inner-page width: the
+   header holds a wordmark, a slogan and six nav links, and squeezing
+   that into the 760px reading column wraps the slogan to three lines and
+   the nav to two rows. Header and content are both centred, so they
+   share a centre line and read as deliberate even where the header is
+   the wider of the two. */
 .site-header {
   padding: 2.5rem 1.25rem 2rem;
   text-align: left;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .site-header .site-name {
@@ -158,6 +175,9 @@ select:focus-visible {
   transform: rotate(-1.5deg) scale(1.04);
 }
 
+/* Site name and slogan on one line, the nav on the line below. They wrap
+   to two lines only when there is genuinely no room, which on the shared
+   1100px header means phones and small tablets. */
 .hero-name-row {
   display: flex;
   align-items: center;
@@ -168,7 +188,9 @@ select:focus-visible {
 .hero-name-row .site-name {
   margin: 0;
   white-space: nowrap;
-  font-size: clamp(28px, 5vw, 64px);
+  font-size: clamp(28px, 4.4vw, 56px);
+  /* Never shrinks: the slogan beside it takes the leftover width. */
+  flex: none;
   /* inline-flex, not the inline-block set above, so the record and the
      wordmark sit on a shared centre line rather than on the text
      baseline, which would hang the disc below the letters. */
@@ -181,9 +203,8 @@ select:focus-visible {
    name's own clamp() size instead of needing its own breakpoints, and
    slightly over 1em because a circle reads smaller than the cap height
    it sits next to. The width/height attributes on the <img> give the
-   browser the 1:1 ratio up front, so the header doesn't reflow when the
-   file lands: header-height.js measures this header to position the
-   sticky board headings, and it waits on fonts, not images. */
+   browser the 1:1 ratio up front, so the header doesn't jump when the
+   file lands. */
 .site-name-mark {
   height: 1.08em;
   width: auto;
@@ -383,15 +404,30 @@ select:focus-visible {
 }
 
 @media (min-width: 1024px) {
+  /* Name and slogan on one line, which is what makes this a header rather
+     than two stacked blocks. nowrap on the row is what guarantees it: the
+     name is flex: none and never shrinks, so the slogan takes whatever is
+     left, and wraps inside its own strip in the rare case the text is too
+     long for one line.
+
+     The strip used to carry white-space: nowrap here instead, which
+     stopped it shrinking at all and so pushed the whole slogan onto a
+     second row -- and it did that at exactly the wide viewports that look
+     like they have room to spare, because the header is capped at main's
+     1100px while both font sizes keep scaling with the window. */
+  .hero-name-row {
+    flex-wrap: nowrap;
+  }
+
   .slogan-strip {
-    white-space: nowrap;
+    min-width: 0;
   }
 
   .board {
     grid-template-columns: 1fr 1fr;
   }
 
-  /* Been and gone on the left, Coming up on the right. DOM order stays
+  /* Past events on the left, Coming up on the right. DOM order stays
      upcoming-first so mobile (no grid here) keeps Coming up on top. */
   .board-column:first-child {
     order: 2;
@@ -399,121 +435,6 @@ select:focus-visible {
 
   .board-column:last-child {
     order: 1;
-  }
-
-  .calendar-panel {
-    position: sticky;
-    top: 1.25rem;
-  }
-
-  /* Home page only, section 7.1: the calendar sits beside the slogan, in
-     the page-level grid below, rather than under the board. main and
-     .home-layout are promoted with display: contents so their children
-     (the board and the calendar) become direct items of that grid,
-     without changing the mobile layout (plain block flow, no grid here)
-     or moving anything in the actual markup. */
-  .page-home {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    column-gap: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 1.25rem 3rem;
-  }
-
-  .page-home main,
-  .page-home .home-layout {
-    display: contents;
-  }
-
-  /* The header stays a real sticky box (it can't also be display:
-     contents -- that would remove the box there'd be nothing to stick).
-     It occupies column 1 on its own row; the calendar (below) sits next
-     to it in column 2. */
-  .page-home .site-header {
-    grid-column: 1;
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: var(--wall-base);
-    background-image: url('/textures/concrete-grain.svg');
-    background-repeat: repeat;
-    margin: 0 -1.25rem;
-    padding: 2.5rem 1.25rem 2rem;
-  }
-
-  /* This nav has less room than on other pages (it shares the row with
-     the site name instead of spanning full width), so tighten it enough
-     to keep all the links on one row instead of wrapping. */
-  .page-home .site-header .site-nav {
-    gap: 0.4rem 0.9rem;
-    font-size: 0.85rem;
-  }
-
-  .page-home .view-toggle {
-    display: none;
-  }
-
-  .page-home [data-panel="board"] {
-    grid-column: 1;
-  }
-
-  /* --header-height is set by header-height.js to the header's actual
-     rendered height (it varies with viewport width, so a fixed guess would
-     only be right sometimes -- see that file). Frozen alongside the
-     header and the calendar; only the cards underneath actually scroll. */
-  .page-home .board-column h2 {
-    position: sticky;
-    top: var(--header-height, 13rem);
-    z-index: 10;
-    margin: 0;
-    padding: 0.75rem 0;
-    background: var(--wall-base);
-    background-image: url('/textures/concrete-grain.svg');
-    background-repeat: repeat;
-  }
-
-  /* Spans both the header's row and the board's row, so this cell is as
-     tall as the two of them combined -- giving the sticky calendar panel
-     inside it (above) room to stay stuck for the board's full height,
-     instead of running out of room and scrolling away after only the
-     header's own short height. */
-  .page-home [data-panel="calendar"] {
-    grid-column: 2;
-    grid-row: 1 / 3;
-  }
-
-  .page-home .site-footer {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Mobile board/calendar toggle, section 7.2 */
-.view-toggle {
-  display: none;
-  gap: 0.5rem;
-  margin: 0 0 1rem;
-}
-
-.view-toggle button {
-  font-family: var(--font-body);
-  font-weight: 600;
-  padding: 0.6rem 1rem;
-  border: 2px solid var(--paper);
-  background: transparent;
-  color: var(--paper);
-  min-height: 44px;
-  min-width: 44px;
-}
-
-.view-toggle button[aria-pressed="true"] {
-  background: var(--paper);
-  color: var(--toner);
-}
-
-@media (max-width: 1023px) {
-  .view-toggle {
-    display: flex;
   }
 }
 
@@ -605,6 +526,25 @@ select:focus-visible {
 
 .calendar-day-lists h3 {
   margin: 0 0 0.35rem;
+}
+
+/* The calendar on its own page: the month grid, then the day lists the
+   grid links down to. .calendar-panel, which this replaces, existed only
+   to be stuck to the side of the home page board. */
+.calendar-month {
+  display: block;
+}
+
+/* The .ics feed, offered under the month it is a feed of rather than as
+   a bare ".ics" link in the nav, which is what it used to be. */
+.calendar-subscribe {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-subscribe h2 {
+  margin-top: 0;
 }
 
 /* Footer, section 6 */

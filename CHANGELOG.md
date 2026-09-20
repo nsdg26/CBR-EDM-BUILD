@@ -185,6 +185,37 @@ All notable changes to this project are documented here. Format follows
   null, which auto-routes to contour.
 
 ### Changed
+- The calendar moved off the home page onto `/calendar`, its own page,
+  reached from the nav (owner decision). The nav link that used to read
+  "Subscribe to the calendar" and download the raw `.ics` now reads
+  "Calendar" and opens that page, which carries the month grid, the
+  per-day event lists, and the subscribe button underneath. The feed
+  itself is unchanged at `/calendar.ics`; it is just offered beside the
+  thing it is a feed of rather than as a bare file link in the nav.
+  The home page is the board and nothing else now. That took the desktop
+  two-column grid, the Board/Calendar toggle that stood in for the
+  calendar on narrow screens, the panel wrappers, and the `?month=`
+  parameter with it. A stale link carrying `?month=` still lands on a
+  working home page, the parameter is simply ignored. `board-toggle.js`
+  and `header-height.js` are gone: both existed only for that layout,
+  and `--header-height` had no other reader.
+- The site name and slogan sit on one line as the header, with the nav
+  below them, instead of stacking. They could always share a row, but two
+  things stopped them: the home page's old grid gave the header a narrow
+  column, and the slogan carried `white-space: nowrap` at desktop so it
+  could not shrink and was pushed onto a second row. The row is now
+  `nowrap` with the name at `flex: none`, so the slogan takes whatever is
+  left and wraps inside its own strip only if the text is ever too long.
+  Both type sizes were also capped lower. Each scales with the viewport
+  while the header stops growing at 1100px, so past that point they kept
+  growing inside a box that did not, overflowing a header that still
+  looked half empty.
+- The header now has a max-width and auto margins of its own. It is a
+  sibling of `main`, not inside it, so it had been spanning the full
+  window while the content below was centred, leaving the site name
+  stranded against the left edge on a wide screen. One width on every
+  page rather than matching `main`'s narrower inner-page column, which
+  would wrap the slogan to three lines and the nav to two rows.
 - Styling and formatting consistency, same pass:
   - Every one-off inline `style="..."` in a template is now a class in the
     relevant stylesheet. The three admin list screens had each rolled

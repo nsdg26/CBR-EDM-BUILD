@@ -3,6 +3,7 @@ import { handleEventPage, handleEventIcs } from './routes/event.js';
 import { handleArchive } from './routes/archive.js';
 import { handleHarmReduction } from './routes/harmReduction.js';
 import { handleCalendarFeed } from './routes/calendarFeed.js';
+import { handleCalendarPage } from './routes/calendar.js';
 import { handleGo } from './routes/go.js';
 import { handleRobots } from './routes/robots.js';
 import { handleManifest } from './routes/manifest.js';
@@ -35,6 +36,7 @@ export async function router(request, env) {
   if (path === '/robots.txt') return handleRobots();
   if (path === '/manifest.webmanifest') return handleManifest();
   if (path === '/calendar.ics') return handleCalendarFeed(request, env);
+  if (path === '/calendar') return handleCalendarPage(request, env);
   if (path === '/look-after-each-other') return handleHarmReduction(request, env);
   if (path === '/archive') return handleArchive(request, env);
 
