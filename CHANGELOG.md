@@ -277,6 +277,8 @@ after deployment.
 Every visual change to the generated flyer engine, in order. See
 `FLYER_ENGINE_VERSION` in `src/flyers/index.js`.
 
+- **0.12.1** - `contour`'s event name bumped from 60px to 66px, owner
+  request: still ahead of the headliner's 56px, just more clearly so.
 - **0.12.0** - `contour`'s no-geocoded-venue map is now a procedurally
   generated heightfield (`diamondSquareGrid`, a seeded diamond-square/
   midpoint-displacement fractal) run through the exact same upsample +
