@@ -489,9 +489,15 @@ select:focus-visible {
 }
 
 /* Calendar grid, section 7.1 and 14 */
+/* Capped rather than filling the column. On its own page the calendar
+   has a 760px column to itself, where a full width table gives day cells
+   nearly twice as wide as they are tall -- a month grid reads as a grid
+   when its cells are roughly square. Left aligned, not centred, so it
+   lines up with the heading and the rest of the page. */
 .calendar {
   background: var(--wall-patch);
   padding: 1rem;
+  max-width: 34rem;
 }
 
 .calendar table {
@@ -518,10 +524,13 @@ select:focus-visible {
    and others like plain text. width: 100% (not a fixed min-width) fills
    whatever the fixed table-layout above gives this column -- it can
    still shrink on a narrow screen instead of forcing the table wider
-   than the page. */
+   than the page. The square aspect is what stops the cells stretching
+   into letterboxes as the column gets wider, with min-height kept as a
+   floor so a narrow phone still gets a 44px tap target. */
 .calendar td a,
 .calendar td span {
   min-height: 44px;
+  aspect-ratio: 1;
   width: 100%;
   display: flex;
   align-items: center;
@@ -532,6 +541,21 @@ select:focus-visible {
   background: var(--paper);
   color: var(--toner);
   text-decoration: none;
+}
+
+/* On a phone the column is only about 350px, and the panel's own padding
+   plus each cell's was eating enough of that to leave the day boxes
+   33px wide against a 44px tap target. Trimmed so they come out close to
+   square, which is also what the aspect-ratio above wants. */
+@media (max-width: 480px) {
+  .calendar {
+    padding: 0.5rem;
+  }
+
+  .calendar th,
+  .calendar td {
+    padding: 0.2rem;
+  }
 }
 
 /* Today's date, section 7.1 */

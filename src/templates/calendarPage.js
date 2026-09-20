@@ -3,8 +3,14 @@ import { calendar } from './calendar.js';
 import { monthLabel } from '../lib/dates.js';
 
 /**
- * GET /calendar. The month calendar on a page of its own, with the
- * subscribable feed offered underneath it.
+ * GET /calendar. The month calendar on a page of its own, with the .ics
+ * file offered for download underneath it.
+ *
+ * Download only, deliberately. A webcal:// "subscribe" button was tried
+ * here and did not work reliably in practice (owner report), so rather
+ * than ship a button that sometimes does nothing, this offers the one
+ * thing that always works and says plainly what it is: a snapshot, not a
+ * live feed.
  *
  * This used to sit beside the board on the home page, in a two column
  * desktop grid, with a Board/Calendar toggle standing in for it on
@@ -16,35 +22,22 @@ import { monthLabel } from '../lib/dates.js';
  * @param {number} year
  * @param {number} month - 1-indexed
  * @param {Date} [now]
- * @param {string} [host] - this site's hostname, for the webcal address
  */
-export function calendarPage(events, year, month, now = new Date(), host = '') {
-  // webcal:// is what actually subscribes. Opening the https .ics in a
-  // browser just downloads it, and an imported file is a snapshot: it
-  // never picks up events added later. The page used to claim the
-  // opposite ("stays up to date on its own"), which was simply wrong for
-  // anyone who clicked the link (owner report).
-  const subscribeUrl = host ? `webcal://${host}/calendar.ics` : '/calendar.ics';
-
+export function calendarPage(events, year, month, now = new Date()) {
   return html`
     <h1>Calendar</h1>
 
     ${calendar(events, year, month, now)}
 
     <div class="calendar-subscribe">
-      <h2>Subscribe</h2>
-      <p>Adds the gig list to your own calendar app, no account needed.</p>
+      <h2>Add it to your own calendar</h2>
       <div class="actions">
-        <a class="button" href="${subscribeUrl}">Subscribe in your calendar app</a>
-        <a class="button secondary" href="/calendar.ics">Download the file instead</a>
+        <a class="button" href="/calendar.ics">Download the calendar file</a>
       </div>
       <p class="muted">
-        Subscribing keeps the list current as events are added. The
-        download is a one-off snapshot of what is listed right now, so
-        you would need to download it again to see anything added later.
-        If subscribing does nothing, copy
-        <code>${host ? `https://${host}/calendar.ics` : '/calendar.ics'}</code>
-        into your calendar's "add by URL" option.
+        Opens in whatever calendar app you use. It is a snapshot of what
+        is listed right now, so download it again to pick up anything
+        added since.
       </p>
     </div>
   `;

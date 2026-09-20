@@ -6,6 +6,17 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- The calendar stretching across its column (owner report). On its own
+  page it had a 760px column to itself, and a full width table gave day
+  cells 86x44, nearly twice as wide as tall. The panel is capped at 34rem
+  and the cells are square, so it reads as a grid again. On a phone the
+  panel's padding plus each cell's had squeezed the boxes to 33px wide
+  against a 44px tap target; trimmed to bring them to 41x44.
+- The webcal:// subscribe button did not work reliably in practice
+  (owner report), so it is gone rather than shipping a button that
+  sometimes does nothing. The page offers the .ics as a plain download
+  and says what it is: a snapshot of what is listed now, to download
+  again for anything added since.
 - Long event names running off both edges of the generated flyer (owner
   report, seen live on "Golden Days Music & Wine Festival"). The contour
   template drew the title at a flat 66px with no width check at all,

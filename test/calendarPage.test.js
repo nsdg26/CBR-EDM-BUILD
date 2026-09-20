@@ -48,23 +48,13 @@ test('the nav offers Calendar as a page, not the raw feed', () => {
   assert.match(page, /header-height\.js/);
 });
 
-test('the calendar page does not claim the download keeps itself current', () => {
-  const page = String(calendarPage([], 2026, 9, NOW, 'cbredm.org'));
-  // The old copy said the feed "stays up to date on its own", which is
-  // false for the download: an imported .ics is a snapshot.
-  assert.doesNotMatch(page, /stays up to date on its own/);
-  assert.match(page, /one-off snapshot/);
-});
-
-test('subscribing uses webcal, with the plain file offered separately', () => {
-  const page = String(calendarPage([], 2026, 9, NOW, 'cbredm.org'));
-  assert.match(page, /href="webcal:\/\/cbredm\.org\/calendar\.ics"/);
-  assert.match(page, /href="\/calendar\.ics"/);
-  assert.match(page, /https:\/\/cbredm\.org\/calendar\.ics/);
-});
-
-test('without a host the calendar page still renders a usable link', () => {
+test('the calendar page offers the file as a download, not a subscription', () => {
   const page = String(calendarPage([], 2026, 9, NOW));
-  assert.doesNotMatch(page, /webcal:\/\//);
   assert.match(page, /href="\/calendar\.ics"/);
+  assert.match(page, /Download the calendar file/);
+  // A webcal:// subscribe button was tried and did not work reliably.
+  assert.doesNotMatch(page, /webcal:/);
+  // And the copy must not go back to promising it updates itself.
+  assert.doesNotMatch(page, /stays up to date on its own/);
+  assert.match(page, /snapshot/);
 });
