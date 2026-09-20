@@ -150,15 +150,25 @@ export function posterPage(homeUrl, size, style = 'record') {
        rules below are untouched, so what actually prints is still the
        sheet at its true size. */
     @media screen {
-      .sheet-scaler {
+      /* Everything here is scoped to .is-scaled, which poster-scale.js
+         adds only when the sheet is actually too wide for the viewport.
+         It used to apply unconditionally, and its margin-left/right of 0
+         cancelled the sheet's own "margin: 0 auto" -- so on any screen
+         big enough to fit the sheet, where no scaling happens at all, the
+         poster sat hard against the left edge with all the slack on the
+         right. Left as it comes on a screen that fits, the sheet just
+         centres itself the way it always did. */
+      .sheet-scaler.is-scaled {
         overflow: hidden;
       }
 
-      .sheet {
+      .sheet-scaler.is-scaled .sheet {
         /* top left, not top center: the sheet's layout box is wider than
            the viewport it's being scaled into, so scaling about its centre
            leaves the shrunken sheet sitting out to the right of the
-           container, where overflow: hidden then clips it. */
+           container, where overflow: hidden then clips it. Scaled from
+           the left edge it lands flush at x=0 and, since the scale is
+           exactly viewport/sheet, fills the width precisely. */
         transform: scale(var(--sheet-scale, 1));
         transform-origin: top left;
         margin-left: 0;

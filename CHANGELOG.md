@@ -6,6 +6,16 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- The poster sitting hard against the left edge of the browser instead of
+  centred (owner report), on any screen wide enough to show the sheet at
+  full size. The phone-scaling wrapper added earlier set `margin-left` and
+  `margin-right` to 0 on the sheet unconditionally, which cancelled its
+  own `margin: 0 auto`. The scaling rules are now scoped to an
+  `is-scaled` class that `poster-scale.js` adds only when the sheet
+  genuinely does not fit, so a screen that fits it leaves the sheet
+  untouched and it centres the way it always did. Checked from 320px to
+  1600px on both artworks and both paper sizes, including resizing wide to
+  narrow and back, with print and the no-JS fallback unaffected.
 - `public/favicon.svg`'s own comment briefly broke the icon outright: an
   XML comment may not contain two consecutive hyphens, and the repo's
   usual "text -- text" dash style put some in. The file parsed as invalid
