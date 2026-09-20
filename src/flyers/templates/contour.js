@@ -168,6 +168,15 @@ const TEXT_MASK_PADDING = 10;
 // the visible letterforms.
 const CAP_HEIGHT_RATIO = 0.72;
 
+// The acts block's four-tier size hierarchy (owner request, 2026-09-20):
+// the event's own name reads as the single biggest line on the flyer,
+// just ahead of a headliner act; the presenter line reads just ahead of
+// a support act's name (which fits at up to 19, see fitNamesBlock's call
+// in buildActsBlock).
+const HEADLINER_SIZE = 56;
+const EVENT_TITLE_SIZE = 60;
+const PRESENTER_SIZE = 22;
+
 /**
  * An opaque rect sized to the text it sits behind, plus a fixed minor
  * padding -- owner request: mask the contour lines under the title and
@@ -301,20 +310,19 @@ function buildActsBlock(ctx, event) {
   // presenter name -- only ever event.headliner (the lineup's first
   // act). Skipped when it would just repeat the headliner (no lineup:
   // normalise.js falls back to event.title as the headliner itself).
-  // The title reads at the same size/weight as a headliner act (owner
-  // request, 2026-09-20: it was previously set at smallSize alongside
-  // the presenter line, which read smaller than the DJ names below it --
-  // the event's own name shouldn't be the least prominent line on its
-  // own flyer). Presenter stays at the small tracked-caps size.
+  // Explicit four-tier size hierarchy (owner request, 2026-09-20): the
+  // event's own name reads as the single biggest line on its own flyer,
+  // just ahead of a headliner act; the presenter line reads just ahead
+  // of a support act's name, rather than sharing one "small" size with
+  // it as before.
   let hasSmallLines = false;
   if (event.title && event.title.toUpperCase() !== (event.headliner || '').toUpperCase()) {
-    line(event.title.toUpperCase(), 56, { weight: 800 });
+    line(event.title.toUpperCase(), EVENT_TITLE_SIZE, { weight: 800 });
     hasSmallLines = true;
   }
 
-  const smallSize = 20;
   if (event.presenter) {
-    line(`Presented by ${event.presenter}`.toUpperCase(), smallSize, { letterSpacing: smallSize * 0.06 });
+    line(`Presented by ${event.presenter}`.toUpperCase(), PRESENTER_SIZE, { letterSpacing: PRESENTER_SIZE * 0.06 });
     hasSmallLines = true;
   }
   if (hasSmallLines) top += 12;
@@ -334,17 +342,17 @@ function buildActsBlock(ctx, event) {
 
   if (headlinerActs.length) {
     for (const act of headlinerActs) {
-      line(act.name.toUpperCase(), 56, { weight: 800 });
+      line(act.name.toUpperCase(), HEADLINER_SIZE, { weight: 800 });
     }
     top += 8;
 
     const support = event.acts.filter((act) => !act.headliner);
     if (support.length) {
       const names = support.map((act) => act.name.toUpperCase());
-      // maxSize stays below smallSize (20, the "Presented by" line
-      // above): a short support lineup with short names used to fit at
-      // up to 22, making a support act's own name read bigger than the
-      // presenter line -- found on a live flyer (DFPM's Dub.Sept).
+      // maxSize stays below PRESENTER_SIZE (22): a short support lineup
+      // with short names used to fit at up to 22, making a support
+      // act's own name read as big as the presenter line -- found on a
+      // live flyer (DFPM's Dub.Sept).
       const fit = fitNamesBlock(names, { width: canvas.contentWidth, height: 380 }, {
         minSize: 16, maxSize: 19, font: 'archivo', leading: 1.6, letterSpacingRatio: 0.05,
       });
