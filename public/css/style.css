@@ -458,6 +458,30 @@ select:focus-visible {
   .board-column:last-child {
     order: 1;
   }
+
+  /* The column headings freeze directly under the frozen header, so you
+     can always tell which column you are scrolling through. They need an
+     opaque background of their own for the same reason the header does:
+     a sticky element paints nothing but itself, so the cards would
+     otherwise scroll straight over the words.
+
+     --header-height is set by header-height.js to the header's real
+     rendered height, which varies with the viewport (clamp() type sizes,
+     a slogan that can wrap, a nav that rewraps), so a hardcoded offset
+     would leave a gap or an overlap at every width but one. The fallback
+     only applies for the moment before that script runs. z-index below
+     the header's own 20, so these slide under it rather than over it if
+     the two ever meet. */
+  .board-column h2 {
+    position: sticky;
+    top: var(--header-height, 13rem);
+    z-index: 10;
+    margin: 0;
+    padding: 0.75rem 0;
+    background: var(--wall-base);
+    background-image: url('/textures/concrete-grain.svg');
+    background-repeat: repeat;
+  }
 }
 
 /* Calendar grid, section 7.1 and 14 */

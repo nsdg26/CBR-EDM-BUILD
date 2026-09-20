@@ -185,6 +185,18 @@ All notable changes to this project are documented here. Format follows
   null, which auto-routes to contour.
 
 ### Changed
+- The board's "Coming up" and "Past events" headings freeze directly
+  under the frozen header, so which column you are scrolling through
+  stays on screen (owner request). They did this before the calendar
+  rework and went with the old grid.
+  `header-height.js` comes back with them, since they need the header's
+  real rendered height to sit flush against it: that height varies with
+  the viewport (clamp() type sizes, a slogan that can wrap, a nav that
+  rewraps), so a hardcoded offset would leave a gap or an overlap at
+  every width but one. Rebuilt around a ResizeObserver rather than the
+  old resize listener, so it also catches the web fonts landing and the
+  nav rewrapping, with the previous listener kept as a fallback.
+  Measured flush (zero gap, zero overlap) at 1024, 1280, 1440 and 1600.
 - The header stays frozen at the top of the viewport while the page
   scrolls, so the nav is always a click away (owner request). It used to
   do this on the desktop home page only, as part of the old two-column

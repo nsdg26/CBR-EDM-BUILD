@@ -41,7 +41,9 @@ test('the nav offers Calendar as a page, not the raw feed', () => {
   const page = String(layout({ title: null, bodyContent: '' }));
   assert.match(page, /<a href="\/calendar">Calendar<\/a>/);
   assert.doesNotMatch(page, /Subscribe to the calendar<\/a>/);
-  // The scripts that only existed for the home page calendar layout.
+  // board-toggle.js existed only for the calendar that used to sit on the
+  // home page. header-height.js stayed: the frozen column headings need
+  // the header's real height to sit directly under it.
   assert.doesNotMatch(page, /board-toggle\.js/);
-  assert.doesNotMatch(page, /header-height\.js/);
+  assert.match(page, /header-height\.js/);
 });
