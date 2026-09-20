@@ -301,17 +301,23 @@ function buildActsBlock(ctx, event) {
   // presenter name -- only ever event.headliner (the lineup's first
   // act). Skipped when it would just repeat the headliner (no lineup:
   // normalise.js falls back to event.title as the headliner itself).
-  const smallLines = [];
+  // The title reads at the same size/weight as a headliner act (owner
+  // request, 2026-09-20: it was previously set at smallSize alongside
+  // the presenter line, which read smaller than the DJ names below it --
+  // the event's own name shouldn't be the least prominent line on its
+  // own flyer). Presenter stays at the small tracked-caps size.
+  let hasSmallLines = false;
   if (event.title && event.title.toUpperCase() !== (event.headliner || '').toUpperCase()) {
-    smallLines.push(event.title);
+    line(event.title.toUpperCase(), 56, { weight: 800 });
+    hasSmallLines = true;
   }
-  if (event.presenter) smallLines.push(`Presented by ${event.presenter}`);
 
   const smallSize = 20;
-  for (const smallLine of smallLines) {
-    line(smallLine.toUpperCase(), smallSize, { letterSpacing: smallSize * 0.06 });
+  if (event.presenter) {
+    line(`Presented by ${event.presenter}`.toUpperCase(), smallSize, { letterSpacing: smallSize * 0.06 });
+    hasSmallLines = true;
   }
-  if (smallLines.length) top += 12;
+  if (hasSmallLines) top += 12;
 
   const headlinerActs = event.acts.filter((act) => act.headliner);
 
@@ -335,10 +341,10 @@ function buildActsBlock(ctx, event) {
     const support = event.acts.filter((act) => !act.headliner);
     if (support.length) {
       const names = support.map((act) => act.name.toUpperCase());
-      // maxSize stays below smallSize (20, the title/"Presented by" line
+      // maxSize stays below smallSize (20, the "Presented by" line
       // above): a short support lineup with short names used to fit at
       // up to 22, making a support act's own name read bigger than the
-      // event/crew name line -- found on a live flyer (DFPM's Dub.Sept).
+      // presenter line -- found on a live flyer (DFPM's Dub.Sept).
       const fit = fitNamesBlock(names, { width: canvas.contentWidth, height: 380 }, {
         minSize: 16, maxSize: 19, font: 'archivo', leading: 1.6, letterSpacingRatio: 0.05,
       });
