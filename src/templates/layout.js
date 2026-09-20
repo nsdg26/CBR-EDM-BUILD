@@ -25,6 +25,8 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title ? `${title} - ${config.siteName}` : config.siteName}</title>
   <meta name="description" content="${config.slogan}">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="stylesheet" href="/css/style.css">
   ${raw(extraHead)}
 </head>

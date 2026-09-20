@@ -87,24 +87,31 @@ export function crewDashboardPage(turnstileSiteKey) {
 }
 
 /**
- * Shared markup for the "add" and "edit" flyer pickers, section 13.
- * Fields are id-prefixed by scope so both can exist in the DOM at once
- * without duplicate ids; behaviour is selected by data-scope in
- * crew-dashboard.js.
+ * Shared markup for the "add" and "edit" flyer panels, section 13.
+ * Behaviour is selected by data-scope in crew-dashboard.js.
+ *
+ * The Template dropdown that used to sit here is gone (owner decision,
+ * carrying the 2026-09-13/14 decision across from the admin screen): every
+ * event always renders with contour, so the dropdown offered a choice of
+ * exactly one thing. The admin picker lost the same control at the time
+ * and this one was missed. As there, only the markup goes -- the
+ * /api/crew/events/:id/flyer-template endpoint stays, so bringing template
+ * choice back is a revert rather than a rebuild. The Reroll button stays:
+ * it isn't about choosing a template, just about varying this one.
  * @param {'create'|'edit'} scope
- * @param {{ withReroll: boolean }} options - the create picker has
+ * @param {{ withReroll: boolean }} options - the create panel has
  *   nothing to reroll yet, since there's no saved event or seed_salt
  */
 function flyerPickerMarkup(scope, { withReroll }) {
   return html`<div data-crew-flyer data-scope="${scope}" hidden>
     <h3>Generated flyer</h3>
-    <p class="muted">Real terrain is fetched automatically for a disclosed venue; mark the event Location TBA to keep the map procedural.</p>
+    <p class="muted">Always rendered with the contour map template. Real terrain is fetched automatically for a disclosed venue; mark the event Location TBA to keep the map procedural.</p>
     <img data-crew-flyer-preview alt="Generated flyer preview" class="flyer-preview">
-    <div class="field">
-      <label for="${scope}-flyer-template">Template</label>
-      <select id="${scope}-flyer-template" data-crew-flyer-template></select>
-    </div>
-    ${withReroll ? html`<button type="button" data-crew-flyer-reroll class="secondary">Reroll (new random variation)</button>` : ''}
+    ${withReroll
+      ? html`<div class="actions">
+          <button type="button" data-crew-flyer-reroll class="secondary">Reroll (new random variation)</button>
+        </div>`
+      : ''}
     <p data-crew-flyer-status role="status"></p>
   </div>`;
 }

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Vinyl record">
+  <!-- A record in the site palette (DESIGN.md): toner-black disc, paper
+       label, sodium spindle. Drawn for a browser tab, so the detail is
+       deliberately coarse: two wide grooves rather than realistic
+       hairlines, which alias into grey mush at 16px.
+
+       The paper-faded outer rim keeps the disc's silhouette visible on a
+       dark tab strip, where a near-black circle would otherwise vanish.
+       The diagonal sheen is a light touch on purpose. It disappears below
+       about 32px, and is there for the places the icon is shown larger:
+       bookmarks bar, history, pinned tab, a phone home screen.
+
+       Note for editors: an XML comment may not contain two consecutive
+       hyphens, so the repo's usual "text, text" dash style is spelled out
+       with a colon or a comma in here. Two hyphens anywhere in this
+       comment is a hard parse error, and the browser then renders
+       nothing at all. -->
+  <defs>
+    <clipPath id="disc">
+      <circle cx="16" cy="16" r="15.25"/>
+    </clipPath>
+  </defs>
+  <circle cx="16" cy="16" r="15.25" fill="#141312" stroke="#bab8b0" stroke-width="1.5"/>
+  <g clip-path="url(#disc)">
+    <path d="M-4 22 L22 -4 L30 4 L4 30 Z" fill="#ffffff" opacity="0.09"/>
+  </g>
+  <g fill="none" stroke="#63615a" stroke-width="1.2">
+    <circle cx="16" cy="16" r="12.2"/>
+    <circle cx="16" cy="16" r="9.4"/>
+  </g>
+  <circle cx="16" cy="16" r="6.4" fill="#d9d8d2"/>
+  <circle cx="16" cy="16" r="1.7" fill="#b8722a"/>
+</svg>

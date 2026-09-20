@@ -31,6 +31,8 @@ export function adminLayout({ title, bodyContent, email, now = new Date() }) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title} - ${config.siteName} admin</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>

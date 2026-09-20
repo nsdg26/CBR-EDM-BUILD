@@ -39,6 +39,8 @@ export function posterPage(homeUrl, size) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Poster - ${config.siteName}</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png">
   <style>
     @font-face {
       font-family: 'Big Shoulders Display';

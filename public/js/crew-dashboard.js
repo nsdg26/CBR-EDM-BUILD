@@ -15,12 +15,10 @@
 
   var editFlyerArea = editArea.querySelector('[data-crew-flyer][data-scope="edit"]');
   var editFlyerPreview = editFlyerArea.querySelector('[data-crew-flyer-preview]');
-  var editFlyerSelect = editFlyerArea.querySelector('[data-crew-flyer-template]');
   var editFlyerStatus = editFlyerArea.querySelector('[data-crew-flyer-status]');
 
   var createFlyerArea = crewArea.querySelector('[data-crew-flyer][data-scope="create"]');
   var createFlyerPreview = createFlyerArea.querySelector('[data-crew-flyer-preview]');
-  var createFlyerSelect = createFlyerArea.querySelector('[data-crew-flyer-template]');
   var createFlyerStatus = createFlyerArea.querySelector('[data-crew-flyer-status]');
 
   var FIELD_NAMES = ['title', 'start_at_local', 'end_at_local', 'venue_name', 'venue_address',
@@ -91,34 +89,22 @@
     return 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
 
-  function renderFlyerInto(area, preview, select, payload) {
+  // The template dropdown this used to populate is gone (see the note in
+  // src/templates/crew.js): there is only ever contour, so all that's left
+  // to show is the preview itself. The payload still carries the template
+  // list, as the untouched endpoint still returns it.
+  function renderFlyerInto(area, preview, payload) {
     if (!payload.svg) {
       area.hidden = true;
       return;
     }
     area.hidden = false;
     preview.src = svgDataUri(payload.svg);
-
-    select.textContent = '';
-    var autoOption = document.createElement('option');
-    autoOption.value = '';
-    autoOption.textContent = 'Auto (by genre) -- currently ' + payload.auto.name;
-    if (!payload.current) autoOption.selected = true;
-    select.appendChild(autoOption);
-
-    payload.templates.forEach(function (t) {
-      var opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = t.name + ': ' + t.blurb;
-      if (payload.current === t.id) opt.selected = true;
-      select.appendChild(opt);
-    });
-
   }
 
   function loadFlyer(id) {
     api('/api/crew/events/' + id + '/flyer', {}).then(function (result) {
-      if (result.ok) renderFlyerInto(editFlyerArea, editFlyerPreview, editFlyerSelect, result);
+      if (result.ok) renderFlyerInto(editFlyerArea, editFlyerPreview, result);
     });
   }
 
@@ -128,10 +114,8 @@
   var createPreviewTimer = null;
 
   function refreshCreatePreview() {
-    var fields = scopedFields('create');
-    fields.flyer_template = createFlyerSelect.value;
-    api('/api/crew/flyer-preview', fields).then(function (result) {
-      if (result.ok) renderFlyerInto(createFlyerArea, createFlyerPreview, createFlyerSelect, result);
+    api('/api/crew/flyer-preview', scopedFields('create')).then(function (result) {
+      if (result.ok) renderFlyerInto(createFlyerArea, createFlyerPreview, result);
     });
   }
 
@@ -143,7 +127,6 @@
   document.querySelectorAll('[data-scope="create"] [data-field]').forEach(function (el) {
     el.addEventListener('input', scheduleCreatePreview);
   });
-  createFlyerSelect.addEventListener('change', refreshCreatePreview);
 
   var profileSection = crewArea.querySelector('[data-crew-profile]');
   var profileStatus = crewArea.querySelector('[data-crew-profile-status]');
@@ -215,9 +198,10 @@
 
   crewArea.querySelector('[data-crew-create]').addEventListener('click', function () {
     createStatus.textContent = 'Saving...';
-    var fields = scopedFields('create');
-    fields.flyer_template = createFlyerSelect.value;
-    api('/api/crew/events/create', fields).then(function (result) {
+    // No flyer_template is sent any more: the crew has no template to
+    // choose. handleCrewEventCreate coerces a missing one to null, which
+    // auto-routes to contour, the only template there is.
+    api('/api/crew/events/create', scopedFields('create')).then(function (result) {
       createStatus.textContent = result.ok
         ? (result.published ? 'Published.' : 'Submitted for admin approval.')
         : (result.error || 'Could not create that event.');
@@ -248,23 +232,11 @@
     });
   });
 
-  editFlyerSelect.addEventListener('change', function () {
-    editFlyerStatus.textContent = 'Saving...';
-    api('/api/crew/events/' + currentEditId + '/flyer-template', { template: editFlyerSelect.value }).then(function (result) {
-      if (result.ok) {
-        renderFlyerInto(editFlyerArea, editFlyerPreview, editFlyerSelect, result);
-        editFlyerStatus.textContent = 'Saved.';
-      } else {
-        editFlyerStatus.textContent = result.error || 'Could not save.';
-      }
-    });
-  });
-
   editFlyerArea.querySelector('[data-crew-flyer-reroll]').addEventListener('click', function () {
     editFlyerStatus.textContent = 'Rerolling...';
     api('/api/crew/events/' + currentEditId + '/reroll-flyer', {}).then(function (result) {
       if (result.ok) {
-        renderFlyerInto(editFlyerArea, editFlyerPreview, editFlyerSelect, result);
+        renderFlyerInto(editFlyerArea, editFlyerPreview, result);
         editFlyerStatus.textContent = 'Rerolled.';
       } else {
         editFlyerStatus.textContent = result.error || 'Could not reroll.';

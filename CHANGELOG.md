@@ -6,6 +6,11 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- `public/favicon.svg`'s own comment briefly broke the icon outright: an
+  XML comment may not contain two consecutive hyphens, and the repo's
+  usual "text -- text" dash style put some in. The file parsed as invalid
+  XML and the browser rendered nothing at all. Noted in the file itself so
+  the next edit doesn't reintroduce it.
 - Site-wide consistency pass over the public pages and the admin panel
   (owner request). Real rendering bugs it turned up:
   - A horizontal scrollbar on the home page. The calendar's screen-reader
@@ -71,6 +76,30 @@ All notable changes to this project are documented here. Format follows
 - The site URL on the printable poster showing a trailing slash
   (`homeUrl` is always built as `origin + '/'`); stripped for display
   only, the QR code itself is unaffected.
+
+### Added
+- A favicon: a vinyl record in the site palette, as
+  `public/favicon.svg` (with `public/favicon-32.png` as a raster fallback
+  for browsers that don't take an SVG icon). Toner-black disc, paper
+  label, sodium spindle, two coarse grooves and a faint diagonal sheen;
+  the paper-faded rim keeps the silhouette readable on a dark browser tab
+  strip. Linked from all three page shells (`templates/layout.js`,
+  `templates/admin/layout.js` and the standalone `templates/poster.js`),
+  which previously had none, so every page was quietly 404ing on
+  `/favicon.ico`.
+
+### Removed
+- The crew dashboard's flyer Template dropdown (owner decision), carrying
+  the 2026-09-13/14 "contour only" decision across from the admin screen,
+  which lost the same control at the time while this one was missed: with
+  one template registered, the dropdown offered a choice of exactly one
+  thing. As with the admin removal, only the markup and its client wiring
+  go. `POST /api/crew/events/:id/flyer-template` and its route stay
+  exactly as they are, so restoring template choice is a revert rather
+  than a rebuild. The Reroll button stays too, being about varying
+  contour rather than replacing it. The "Add an event" form no longer
+  sends `flyer_template`; the server already coerces a missing one to
+  null, which auto-routes to contour.
 
 ### Changed
 - Styling and formatting consistency, same pass:
