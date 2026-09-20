@@ -1,10 +1,22 @@
 import { html, raw } from '../lib/escape.js';
 import qrcode from '../vendor/qrcode.mjs';
 import { config } from '../config.js';
+import { recordQrSvg } from '../lib/recordQr.js';
 
 const SIZES = {
   a4: { label: 'A4', widthMm: 210, heightMm: 297 },
   a6: { label: 'A6', widthMm: 105, heightMm: 148 },
+};
+
+// The sheet's own two colours, also passed to the record drawing so it
+// prints in the same ink as everything else on the page.
+const PAPER = '#d9d8d2';
+const TONER = '#141312';
+const GROOVE = '#63615a';
+
+const STYLES = {
+  record: { label: 'Record' },
+  plain: { label: 'Plain QR' },
 };
 
 /**
@@ -12,12 +24,21 @@ const SIZES = {
  * slogan and a QR code to the home page, in the site's visual style, for
  * stickers and record shop walls. Works without JavaScript; size is
  * chosen with plain links.
+ * Two artworks, chosen with ?style=. "record" draws the QR as a vinyl
+ * record's label, which is the default; "plain" is the original bare QR,
+ * kept because the record shrinks the code to about a third of the
+ * record's width and a poster read from across a room may want the
+ * bigger symbol. Neither is more or less scannable at a given symbol
+ * size: see the quiet-zone note in lib/recordQr.js.
  * @param {string} homeUrl - absolute URL to the site's home page
  * @param {'a4'|'a6'} size
+ * @param {'record'|'plain'} [style]
  */
-export function posterPage(homeUrl, size) {
+export function posterPage(homeUrl, size, style = 'record') {
   const dimensions = SIZES[size] || SIZES.a4;
   const otherSize = size === 'a6' ? 'a4' : 'a6';
+  const artwork = STYLES[style] ? style : 'record';
+  const otherStyle = artwork === 'record' ? 'plain' : 'record';
   // A6 is the hand-tuned baseline (owner feedback: its margins and fill
   // are right). Content scaled off a plain size ternary (as this used to)
   // grows slower than the page itself -- A4 is exactly 2x A6 linearly, but
@@ -31,7 +52,14 @@ export function posterPage(homeUrl, size) {
   const qr = qrcode(0, 'M');
   qr.addData(homeUrl);
   qr.make();
-  const qrSvg = qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+  const qrSvg = artwork === 'record'
+    ? recordQrSvg(qr, {
+      paper: PAPER,
+      ink: TONER,
+      groove: GROOVE,
+      label: `Scan to open ${config.siteName}`,
+    }).svg
+    : qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
 
   return html`<!doctype html>
 <html lang="en-AU">
@@ -111,8 +139,8 @@ export function posterPage(homeUrl, size) {
     }
 
     .sheet svg {
-      width: ${mm(45)};
-      height: ${mm(45)};
+      width: ${mm(artwork === 'record' ? 76 : 45)};
+      height: ${mm(artwork === 'record' ? 76 : 45)};
     }
 
     /* On screen only: the sheet is a fixed real-world width (A4 is 210mm,
@@ -153,7 +181,8 @@ export function posterPage(homeUrl, size) {
 </head>
 <body>
   <div class="screen-only">
-    <p>Print size: ${dimensions.label}. <a href="/poster?size=${otherSize}">Switch to ${SIZES[otherSize].label}</a></p>
+    <p>Print size: ${dimensions.label}. <a href="/poster?size=${otherSize}&amp;style=${artwork}">Switch to ${SIZES[otherSize].label}</a></p>
+    <p>Artwork: ${STYLES[artwork].label}. <a href="/poster?size=${size}&amp;style=${otherStyle}">Switch to ${STYLES[otherStyle].label}</a></p>
     <button type="button" data-print-button>Print</button>
   </div>
   <div class="sheet-scaler">

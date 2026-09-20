@@ -78,6 +78,26 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Added
+- The printable poster can draw its QR code as a vinyl record's label,
+  which is now the default, with the original bare QR kept behind
+  `?style=plain` and a switch link beside the existing paper size one.
+  Both parameters survive switching the other.
+  The QR stays fully scannable, and the reason is geometric rather than a
+  fudge: a code needs 4 blank modules around it, and a circular label
+  around a square symbol clears each edge's midpoint by about 20.7% of the
+  symbol's width for free, which is over 10 modules here. The grooves all
+  sit outside that, so nothing ever overlaps the symbol and its error
+  correction is never spent covering for the artwork. This is actually
+  stricter than the plain poster beside it, whose built-in margin is only
+  2 modules and which gets away with it purely by sitting on blank paper.
+  `src/lib/recordQr.js` holds the drawing and exposes its geometry so the
+  quiet-zone guarantee is asserted in `test/recordQr.test.js` rather than
+  taken on trust. Verified separately by decoding the real rendered sheets
+  at both paper sizes down to a 260px-wide photo of the whole page.
+  The record shrinks the symbol to about a third of its own width, so A4
+  goes from a 78mm code to roughly 49mm. That is still an easy scan close
+  up, but a poster read from across a room may want `?style=plain`, which
+  is why it stayed.
 - The record now sits in the site header too, to the left of the
   wordmark and inside the same link home, so the mark on the tab, the
   home screen and the page itself are all the one thing. Sized in `em` so
