@@ -11,6 +11,7 @@
 
 import { ticketFooter, TICKET_FOOTER_HEIGHT } from '../parts/ticketFooter.js';
 import { measure } from '../metrics.js';
+import { fitBlock, fitSingleLine } from '../layout.js';
 import { escapeXml } from '../xml.js';
 import { range } from '../seed.js';
 
@@ -175,7 +176,19 @@ const CAP_HEIGHT_RATIO = 0.72;
 // in buildActsBlock).
 const HEADLINER_SIZE = 50;
 const EVENT_TITLE_SIZE = 66;
+// A long title wraps rather than shrinking to nothing. Two lines is the
+// shape to aim for, since past that the name starts competing with the
+// lineup for the eye, which is the wrong way round on a flyer -- but the
+// box allows a third, because the name is never worth truncating to keep
+// the proportions. fitBlock maximises the size that fits, so a title that
+// wraps comfortably in two still gets nearly the full size.
+const EVENT_TITLE_MIN_SIZE = 32;
+const EVENT_TITLE_MAX_LINES = 3;
+const EVENT_TITLE_LEADING = 1.12;
 const PRESENTER_SIZE = 22;
+// The presenter line is one line by design, so it shrinks rather than
+// wrapping. Rarely reached: at 22px it takes a very long crew name.
+const PRESENTER_MIN_SIZE = 14;
 
 /**
  * An opaque rect sized to the text it sits behind, plus a fixed minor
@@ -317,12 +330,52 @@ function buildActsBlock(ctx, event) {
   // it as before.
   let hasSmallLines = false;
   if (event.title && event.title.toUpperCase() !== (event.headliner || '').toUpperCase()) {
-    line(event.title.toUpperCase(), EVENT_TITLE_SIZE, { weight: 800 });
+    // This was drawn at a flat EVENT_TITLE_SIZE with no width check at
+    // all, unlike every other block here, so a long name simply ran off
+    // both edges of the canvas -- owner report, "Golden Days Music &
+    // Wine Festival" measuring 1298px across a 936px content width, so
+    // about 109px lost off each side. Short titles still render at
+    // exactly EVENT_TITLE_SIZE on one line, byte for byte as before;
+    // only a title that genuinely does not fit is touched.
+    const title = event.title.toUpperCase();
+    if (measure(title, { font: 'archivo', size: EVENT_TITLE_SIZE }) <= canvas.contentWidth) {
+      line(title, EVENT_TITLE_SIZE, { weight: 800 });
+    } else {
+      const fit = fitBlock(title, {
+        width: canvas.contentWidth,
+        // Room for EVENT_TITLE_MAX_LINES at full size. fitBlock maximises
+        // the size that fits, so a title that wraps to two comfortable
+        // lines keeps nearly all of its height rather than shrinking.
+        height: EVENT_TITLE_SIZE * EVENT_TITLE_LEADING * EVENT_TITLE_MAX_LINES + 1,
+      }, {
+        minSize: EVENT_TITLE_MIN_SIZE,
+        maxSize: EVENT_TITLE_SIZE,
+        font: 'archivo',
+        leading: EVENT_TITLE_LEADING,
+      });
+      // Every line, never a slice: an event's own name is the one thing
+      // on the flyer that must not be silently cut short, and an absurd
+      // title is better ugly than wrong. The block below is fitted to a
+      // fixed box and the caller places the map from the returned
+      // bottomY, so extra lines push things down rather than collide.
+      for (const titleLine of fit.lines) {
+        line(titleLine, fit.size, { weight: 800 });
+      }
+    }
     hasSmallLines = true;
   }
 
   if (event.presenter) {
-    line(`Presented by ${event.presenter}`.toUpperCase(), PRESENTER_SIZE, { letterSpacing: PRESENTER_SIZE * 0.06 });
+    // Same fixed-size trap as the title above, just far less likely to
+    // bite at 22px. One line by design, so it shrinks rather than wraps.
+    const presenter = `Presented by ${event.presenter}`.toUpperCase();
+    const presenterSize = fitSingleLine(presenter, canvas.contentWidth, {
+      font: 'archivo',
+      maxSize: PRESENTER_SIZE,
+      minSize: PRESENTER_MIN_SIZE,
+      letterSpacing: PRESENTER_SIZE * 0.06,
+    });
+    line(presenter, presenterSize, { letterSpacing: presenterSize * 0.06 });
     hasSmallLines = true;
   }
   if (hasSmallLines) top += 12;

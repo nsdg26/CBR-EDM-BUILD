@@ -6,6 +6,26 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Long event names running off both edges of the generated flyer (owner
+  report, seen live on "Golden Days Music & Wine Festival"). The contour
+  template drew the title at a flat 66px with no width check at all,
+  unlike every other block on it, which fit themselves against the
+  canvas. That title measured 1298px across a 936px content width, so
+  about 109px was lost off each side. It now wraps, and shrinks only if
+  wrapping is not enough. A title that already fitted is untouched and
+  still renders at exactly 66px on one line, so existing flyers do not
+  move. The name is never truncated: an absurd one goes to more lines
+  rather than being cut short. The presenter line had the same
+  fixed-size trap and now fits too, shrinking rather than wrapping since
+  it is one line by design.
+- The calendar page claimed the feed "stays up to date on its own",
+  which is false for anyone who clicks the button: a browser downloads
+  the .ics and an imported file is a snapshot that never sees events
+  added later (owner report). Subscribing is now a `webcal://` link,
+  which is the thing that actually subscribes, with the plain download
+  offered beside it and honestly described as a one-off snapshot. The
+  feed address is printed for pasting into a calendar app's "add by URL"
+  option.
 - The poster sitting hard against the left edge of the browser instead of
   centred (owner report), on any screen wide enough to show the sheet at
   full size. The phone-scaling wrapper added earlier set `margin-left` and
@@ -185,6 +205,9 @@ All notable changes to this project are documented here. Format follows
   null, which auto-routes to contour.
 
 ### Changed
+- The nav link bar is centred on the page and wraps, so adding links
+  fills the row and starts a new centred one rather than needing the
+  spacing retuned (owner request).
 - The board's "Coming up" and "Past events" headings freeze directly
   under the frozen header, so which column you are scrolling through
   stays on screen (owner request). They did this before the calendar

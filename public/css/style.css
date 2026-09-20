@@ -49,6 +49,7 @@
   --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --font-stencil: 'Big Shoulders Stencil', 'Arial Narrow', sans-serif;
   --font-body: 'Archivo', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
   --text-body: 16px;
   --text-small: 14px;
@@ -230,10 +231,13 @@ select:focus-visible {
 }
 
 /* Site nav: the actionable links, up top so people don't need to scroll
-   the footer to find them. */
+   the footer to find them. Centred on the page, and wrapping, so adding
+   links just fills the row and then starts a new centred one rather than
+   needing the spacing retuned. */
 .site-nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem 1.25rem;
   margin: 1rem 0 0;
   padding: 0;
@@ -579,6 +583,16 @@ select:focus-visible {
    to be stuck to the side of the home page board. */
 .calendar-month {
   display: block;
+}
+
+/* An address meant to be read and copied (the calendar feed's URL).
+   Monospace so it is obviously a thing to copy rather than prose, and
+   allowed to break mid-address so a long host cannot push the page
+   sideways on a phone. */
+code {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Courier New', monospace);
+  font-size: 0.9em;
+  word-break: break-all;
 }
 
 /* The .ics feed, offered under the month it is a feed of rather than as

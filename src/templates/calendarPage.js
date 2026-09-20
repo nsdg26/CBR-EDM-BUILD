@@ -16,8 +16,16 @@ import { monthLabel } from '../lib/dates.js';
  * @param {number} year
  * @param {number} month - 1-indexed
  * @param {Date} [now]
+ * @param {string} [host] - this site's hostname, for the webcal address
  */
-export function calendarPage(events, year, month, now = new Date()) {
+export function calendarPage(events, year, month, now = new Date(), host = '') {
+  // webcal:// is what actually subscribes. Opening the https .ics in a
+  // browser just downloads it, and an imported file is a snapshot: it
+  // never picks up events added later. The page used to claim the
+  // opposite ("stays up to date on its own"), which was simply wrong for
+  // anyone who clicked the link (owner report).
+  const subscribeUrl = host ? `webcal://${host}/calendar.ics` : '/calendar.ics';
+
   return html`
     <h1>Calendar</h1>
 
@@ -25,11 +33,19 @@ export function calendarPage(events, year, month, now = new Date()) {
 
     <div class="calendar-subscribe">
       <h2>Subscribe</h2>
-      <p>Add every gig to your own calendar and it stays up to date on its own, no app and no account.</p>
+      <p>Adds the gig list to your own calendar app, no account needed.</p>
       <div class="actions">
-        <a class="button" href="/calendar.ics">Subscribe to the calendar</a>
+        <a class="button" href="${subscribeUrl}">Subscribe in your calendar app</a>
+        <a class="button secondary" href="/calendar.ics">Download the file instead</a>
       </div>
-      <p class="muted">Opens in whatever calendar app you use. If nothing happens, copy that link into your calendar's "add by URL" option.</p>
+      <p class="muted">
+        Subscribing keeps the list current as events are added. The
+        download is a one-off snapshot of what is listed right now, so
+        you would need to download it again to see anything added later.
+        If subscribing does nothing, copy
+        <code>${host ? `https://${host}/calendar.ics` : '/calendar.ics'}</code>
+        into your calendar's "add by URL" option.
+      </p>
     </div>
   `;
 }
