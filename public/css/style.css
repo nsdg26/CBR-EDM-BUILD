@@ -230,6 +230,19 @@ select:focus-visible {
   flex: 0 1 auto;
 }
 
+/* Below the 1024px breakpoint the name and slogan stop sharing a line
+   and stack, and a left aligned wordmark over a full width slogan strip
+   and a centred nav row read as three different alignments. Centring the
+   row puts the name on the same centre line as the slogan and the nav
+   buttons, which is what the header looks like on a phone. Only up to
+   1023px: from 1024px the row is nowrap and genuinely one line, where
+   flex-start is what keeps the name hard left and the slogan beside it. */
+@media (max-width: 1023px) {
+  .hero-name-row {
+    justify-content: center;
+  }
+}
+
 /* Site nav: the actionable links, up top so people don't need to scroll
    the footer to find them. Centred on the page, and wrapping, so adding
    links just fills the row and then starts a new centred one rather than

@@ -6,6 +6,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- The site name sitting hard left in the header on a phone (owner
+  report), under a full width slogan strip and a centred nav row, so the
+  header read as three different alignments. Below the 1024px
+  breakpoint, where the name and slogan stop sharing a line and stack,
+  the row is now centred, putting the wordmark on the same centre line
+  as the slogan and the nav buttons. Desktop is untouched: from 1024px
+  the row is a single nowrap line and the name stays hard left with the
+  slogan beside it.
 - The calendar stretching across its column (owner report). On its own
   page it had a 760px column to itself, and a full width table gave day
   cells 86x44, nearly twice as wide as tall. The panel is capped at 34rem
