@@ -860,6 +860,14 @@ button[aria-disabled="true"] {
   font-weight: 600;
 }
 
+/* Same trap as .scrap a: the global `a { color: var(--paper) }` is for the
+   dark wall, and on this notice's own paper background it left the link
+   invisible -- the admin queue's "Review them" on the stale harm reduction
+   links warning is one. Inheriting picks up the notice's stamp ink. */
+.error a {
+  color: inherit;
+}
+
 details.field summary {
   cursor: pointer;
   font-weight: 600;

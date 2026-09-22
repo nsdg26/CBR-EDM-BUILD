@@ -1,169 +1,181 @@
-/* Admin panel: plain and functional, not the public site's design. */
+/* Admin panel overlay.
 
-:root {
-  --bg: #f4f3f0;
-  --text: #1a1a18;
-  --muted: #5c5b57;
-  --border: #cbc9c2;
-  --accent: #2e2d2a;
-  --danger: #8f1d1d;
-  --focus: #b8722a;
+   This file used to be a standalone stylesheet with its own tokens, its
+   own @font-face block and its own copies of the form, button, checkbox
+   and lineup-row rules -- a second design (light grey page, dark grey
+   header) that had nothing to do with the public site and drifted out of
+   step with it every time style.css changed. Owner request: the admin
+   should look like the rest of the site.
+
+   So the admin shell now loads style.css first and this file second.
+   Everything shared -- the colour and type tokens, the two self-hosted
+   faces, the concrete wall and its grain, headings, .field, inputs,
+   buttons, .actions, .muted, .error, the checkbox alignment, the DJ
+   lineup rows -- comes from there and is not repeated here. What is left
+   below is only what the admin has and the public site does not: its
+   header chrome, the reminder banner, data tables, stacked records, the
+   inbound-email body, the search row and the flyer preview.
+
+   Density is deliberately kept: this is a screen for getting through a
+   queue, so the wall is the same but the padding is tighter than a public
+   page's and the content column is wider. */
+
+/* The public site caps every page but the home board at 760px, which is
+   right for a form or an article and too narrow for a five column table.
+   Same specificity as that rule (body:not(.page-home) main), so this wins
+   on load order, which is why admin.css must come second in the shell. */
+body.page-admin main {
+  max-width: 1040px;
+  padding-top: 1.5rem;
 }
 
-* {
-  box-sizing: border-box;
+/* Header: the same .site-header / .hero-name-row / .site-nav markup and
+   rules as the public pages, so the wordmark, the record and the nav
+   buttons are identical. Only the vertical padding is trimmed -- nine nav
+   links plus a signed-in line is a taller block than the public header,
+   and this one is sticky from 1024px up (style.css), so it should not eat
+   the screen. */
+body.page-admin .site-header {
+  padding: 1.5rem 0 1.25rem;
 }
 
-@font-face {
-  font-family: 'Archivo';
-  src: url('/fonts/archivo.woff2') format('woff2-variations');
-  font-weight: 400 600;
-  font-display: swap;
+/* "Admin", in the slogan strip's place. The public slogan is the one loud
+   element on the page; here it is a label, so it keeps the strip's paper
+   and its angle but drops to the size of a heading rather than shouting
+   one word across the header. */
+body.page-admin .slogan-strip {
+  font-size: var(--text-h3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Archivo', Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
+/* Back to the public site, at the end of the admin links. Marked out from
+   the eight admin destinations beside it so it is clearly a way out
+   rather than another panel. */
+.site-nav .admin-nav-site {
+  border-style: dashed;
 }
 
-a {
-  color: var(--accent);
+.admin-signed-in {
+  margin: 0.75rem 0 0;
+  font-size: var(--text-small);
+  color: #b5b3aa;
+  text-align: center;
 }
 
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
+/* Section headings on an admin screen separate whole blocks of work -- a
+   crew's key from its details, the flyer from the event form, one stats
+   table from the next -- and at the site's heading scale they were
+   landing hard against the block above with no room to read as a break.
+   Only inside main, so the header's own markup is untouched. */
+.page-admin main h2,
+.page-admin main h3 {
+  margin: 2.25rem 0 0.75rem;
 }
 
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  padding: 0.75rem 1.25rem;
-  background: var(--accent);
-  color: #fff;
+.page-admin main > :first-child {
+  margin-top: 0;
 }
 
-.admin-header nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.admin-header a {
-  color: #fff;
-}
-
+/* The reminder banner (config.reminderBanner). A notice, pasted up on the
+   wall: paper, toner, the site's angle-free flat edges, and the stamp's
+   ink on its leading edge rather than the old amber-on-brown, which was
+   from the previous palette. */
 .admin-banner {
-  background: #f7d9a8;
-  color: #4a2c02;
-  padding: 0.75rem 1.25rem;
-  margin: 0;
-  font-weight: bold;
+  max-width: 1040px;
+  margin: 0 auto 1.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--paper);
+  color: var(--toner);
+  border-left: 6px solid var(--stamp-ink);
+  font-weight: 600;
 }
 
-main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem;
-}
-
-table {
+/* Data tables: the queue counts, events, crews, stats, the before/after
+   comparison on a change. Panelled on the concrete patch, the same
+   backing the calendar grid uses, so a table reads as one object on the
+   wall instead of rows floating on the texture. */
+.page-admin table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1.5rem;
+  background: var(--wall-patch);
+  margin: 0 0 1.5rem;
 }
 
-th, td {
+.page-admin th,
+.page-admin td {
   text-align: left;
-  padding: 0.5rem;
+  padding: 0.55rem 0.75rem;
   border-bottom: 1px solid var(--border);
+  vertical-align: top;
 }
 
-.field {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.page-admin th {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-small);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid rgba(217, 216, 210, 0.45);
 }
 
-label {
-  font-weight: bold;
+.page-admin tbody tr:last-child td {
+  border-bottom: 0;
 }
 
-input, textarea, select {
-  font: inherit;
-  padding: 0.5rem;
-  border: 1px solid var(--border);
-  min-height: 44px;
-}
-
-textarea {
-  min-height: 88px;
-}
-
-button, .button {
-  font: inherit;
-  padding: 0.5rem 1rem;
-  min-height: 44px;
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
-}
-
-button.secondary, .button.secondary {
-  background: transparent;
-  color: var(--accent);
-}
-
-button.danger, .button.danger {
-  background: var(--danger);
-  border-color: var(--danger);
-}
-
-button:disabled, .button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+/* Rows are links to somewhere in half these tables, so the link needs to
+   be visible against the panel rather than inheriting the wall's plain
+   paper colour with no affordance. */
+.page-admin td a {
+  text-underline-offset: 0.2em;
 }
 
 /* One entry in a stacked admin list -- a pending change, a contact
    message, a harm reduction link's edit form. These were three separate
    inline styles that had drifted to two different border widths (2px on
    the changes screen, 1px on the other two); one class keeps the
-   dividers identical everywhere. */
+   dividers identical everywhere. Now a panel rather than a bare divider,
+   for the same reason the tables are: an edit form's worth of controls
+   needs a visible edge to belong to on a textured background. */
 .admin-record {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
+  background: var(--wall-patch);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-record > :first-child {
+  margin-top: 0;
+}
+
+.admin-record > :last-child {
+  margin-bottom: 0;
 }
 
 /* The inbound email body: plain text, wrapped, in the page's own font so
-   it doesn't read as code. Was an inline style. */
+   it doesn't read as code. It is someone else's words quoted verbatim,
+   so it sits on paper like every other piece of real content on the
+   site, rather than in a code block. */
 .admin-pre {
+  /* Capped at a readable measure rather than the admin column's full
+     1040px: this is prose someone typed in an email client, and a
+     90-plus-character line is hard to track back from. */
+  max-width: 68ch;
   white-space: pre-wrap;
-  font-family: inherit;
-  background: #fff;
+  word-break: break-word;
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--toner);
   padding: 1rem;
-  border: 1px solid var(--border);
-  margin: 0 0 1rem;
+  margin: 0 0 1.5rem;
+}
+
+/* One-off secrets shown exactly once: a new crew key, a new edit link.
+   They live inside a .error paper block (style.css), so they need the
+   toner-on-paper treatment, not the wall's. */
+.page-admin code {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  word-break: break-all;
 }
 
 /* A search box and its button side by side. Plain .field is a column, so
@@ -175,11 +187,12 @@ button:disabled, .button:disabled {
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .admin-search label {
   flex: 1 1 100%;
+  font-weight: 600;
 }
 
 .admin-search input {
@@ -187,87 +200,14 @@ button:disabled, .button:disabled {
   min-width: 0;
 }
 
-.muted {
-  color: var(--muted);
-}
-
-.error {
-  color: var(--danger);
-  font-weight: bold;
-}
-
+/* Validation messages above a form. .error (style.css) is the paper
+   notice block; this is the bare list of field problems, so it is set in
+   the stamp's ink straight on the wall. */
 .field-error {
-  color: var(--danger);
-  font-size: 14px;
-  list-style: none;
+  color: #e08a8a;
+  font-size: var(--text-small);
   margin: 0 0 1rem;
   padding: 0;
-}
-
-/* A checkbox inside a <label> otherwise inherits the 44px min-height
-   given to every input above, blowing it up to 44px square next to
-   normal-height text -- see the matching rule in style.css, which this
-   mirrors so the admin event form's DJ-row headliner and age-restriction
-   checkboxes line up the same way the public forms' do. */
-.field label:has(> input[type="checkbox"]) {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.field label:has(> input[type="checkbox"]) input[type="checkbox"] {
-  min-height: auto;
-  width: 1.15rem;
-  height: 1.15rem;
-  flex: none;
-}
-
-/* DJ rows, section 9.1 rework: name, set time, genre, a headliner
-   checkbox and a remove button, all in one row -- mirrors style.css so
-   the admin event form matches the public submit/edit forms. */
-/* The lineup field's group label. Not a <label> element: it labels a
-   group of DJ rows, not one input, so it carries the same weight as a
-   real field label without claiming to be one. */
-.lineup-label {
-  font-weight: bold;
-}
-
-.lineup-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.lineup-row [data-lineup-name] {
-  flex: 2 1 10rem;
-  min-width: 0;
-}
-
-.lineup-row [data-lineup-time],
-.lineup-row [data-lineup-genre] {
-  flex: 1 1 7rem;
-  min-width: 0;
-}
-
-.lineup-row-headliner {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-weight: 400;
-  white-space: nowrap;
-}
-
-.lineup-row-headliner input[type="checkbox"] {
-  min-height: auto;
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-.lineup-row [data-remove-dj] {
-  padding: 0.4rem 0.7rem;
-  min-height: auto;
 }
 
 /* Generated flyer preview, FLYER-ENGINE-SPEC.md section 13: the inlined
@@ -284,4 +224,32 @@ button:disabled, .button:disabled {
   width: 100%;
   height: auto;
   display: block;
+}
+
+/* An attachment on an inbound email or a converted event: a photo on the
+   wall, given the paper border the rest of the panel content has. */
+.page-admin main img:not(.site-name-mark) {
+  max-width: 100%;
+  height: auto;
+  background: var(--paper);
+  padding: 0.35rem;
+}
+
+/* Phones: the wider admin tables (events is title, start, visibility,
+   status and an edit link) were forcing the page about 60px wider than
+   a 390px screen, putting a horizontal scrollbar on the whole document
+   -- the panel and the header scrolled with it. Tighter cells, the small
+   type size and a break on the long unbroken strings (slugs, addresses,
+   ISO timestamps) bring them inside the column instead, so the table
+   wraps rather than the page sliding sideways. */
+@media (max-width: 700px) {
+  .page-admin table {
+    font-size: var(--text-small);
+  }
+
+  .page-admin th,
+  .page-admin td {
+    padding: 0.45rem 0.4rem;
+    overflow-wrap: break-word;
+  }
 }

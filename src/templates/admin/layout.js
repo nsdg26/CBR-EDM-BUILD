@@ -14,7 +14,17 @@ const NAV = [
 ];
 
 /**
- * The admin panel shell. Plain, functional, no-store. Section 10.2.
+ * The admin panel shell. Section 10.2 asks for plain and functional, and
+ * it still is -- tables, forms and stacked records, nothing decorative
+ * that gets in the way of a job. What changed (owner request) is that it
+ * now wears the public site's design instead of a second, unrelated one:
+ * it loads style.css first and admin.css only as an overlay, so the
+ * tokens, the two self-hosted faces, the concrete wall, the paper inputs
+ * and the buttons are literally the same rules the public pages use, and
+ * the header is built from the same .site-header / .site-nav markup.
+ * That also means admin.css no longer keeps its own copy of the fonts,
+ * the colours or the form and lineup-row styling to drift out of step.
+ * Still no-store, still no public-site scripts it has no use for.
  * @param {{ title: string, bodyContent: string, email: string, now?: Date }} options
  */
 export function adminLayout({ title, bodyContent, email, now = new Date() }) {
@@ -31,16 +41,31 @@ export function adminLayout({ title, bodyContent, email, now = new Date() }) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title} - ${config.siteName} admin</title>
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+  <meta name="theme-color" content="${config.themeColour}">
+  <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
-<body>
-  <header class="admin-header">
-    <nav>
-      ${NAV.map(([href, label]) => html`<a href="${href}">${label}</a>`)}
-    </nav>
-    <span>Signed in as ${email}</span>
+<body class="page-admin">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="hero-name-row">
+        <a href="/admin" class="site-name">
+          <img class="site-name-mark" src="/icons/record.svg" alt="" width="512" height="512">
+          <span>${config.siteName}</span>
+        </a>
+        <p class="slogan-strip">Admin</p>
+      </div>
+      <nav aria-label="Admin">
+        <ul class="site-nav">
+          ${NAV.map(([href, label]) => html`<li><a href="${href}">${label}</a></li>`)}
+          <li><a href="/" class="admin-nav-site">View the site</a></li>
+        </ul>
+      </nav>
+      <p class="admin-signed-in">Signed in as ${email}</p>
+    </div>
   </header>
   ${showReminderBanner
     ? html`<p class="admin-banner">${banner.text}</p>`
@@ -48,6 +73,7 @@ export function adminLayout({ title, bodyContent, email, now = new Date() }) {
   <main>
     ${raw(bodyContent)}
   </main>
+  <script src="/js/header-height.js" defer></script>
   <script src="/js/admin-confirm.js" defer></script>
   <script src="/js/lineup-rows.js" defer></script>
   <script src="/js/admin-events-form.js" defer></script>

@@ -6,6 +6,17 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Links inside a paper notice were invisible -- the same trap `.scrap a`
+  already fixed for cards. The global `a { color: var(--paper) }` is for
+  the dark wall, so on `.error`'s own paper background a link came out
+  the same colour as the block it sat in; the admin queue's "Review
+  them" on the stale harm reduction links warning was one. They inherit
+  the notice's stamp ink now.
+- The admin events and crews tables forced a phone's page about 60px
+  wider than the screen, putting a horizontal scrollbar on the whole
+  document so the header and panels slid sideways with it. Below 700px
+  the cells are tighter, set at the small type size and allowed to break
+  a word that genuinely does not fit, so the table wraps instead.
 - The site name sitting hard left in the header on a phone (owner
   report), under a full width slogan strip and a centred nav row, so the
   header read as three different alignments. Below the 1024px
@@ -224,6 +235,27 @@ All notable changes to this project are documented here. Format follows
   null, which auto-routes to contour.
 
 ### Changed
+- The admin panel now wears the public site's design instead of a second,
+  unrelated one (owner request). It was a light grey page with a dark
+  grey header, built on its own stylesheet that kept private copies of
+  the tokens, the @font-face blocks and the form, button, checkbox and
+  DJ-lineup-row rules -- so every change to style.css left the two
+  further apart. The admin shell now loads style.css first and admin.css
+  only as an overlay, which means the concrete wall and its grain, the
+  paper inputs, the buttons, the headings and the focus ring are
+  literally the same rules the public pages use, and cannot drift again.
+  The header is built from the same .site-header / .hero-name-row /
+  .site-nav markup as the public one, so the wordmark, the record and
+  the nav buttons are identical, with "Admin" in the slogan strip's
+  place and a dashed "View the site" link back out at the end of the
+  nav. Tables and stacked records sit on the concrete patch panel the
+  calendar grid uses, table headings are set in the display face, the
+  reminder banner is paper with a stamp-ink edge rather than the old
+  amber-on-brown from a palette the site no longer has, and the
+  inbound-email body is quoted on paper. It is still plain and
+  functional per section 10.2: denser padding and a wider 1040px column
+  than a public page, since this is a screen for getting through a
+  queue. Admin pages also now carry a noindex robots meta.
 - The nav link bar is centred on the page and wraps, so adding links
   fills the row and starts a new centred one rather than needing the
   spacing retuned (owner request).
