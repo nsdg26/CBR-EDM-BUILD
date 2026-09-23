@@ -1,6 +1,8 @@
 // Random ID and slug generation, section 5: "IDs are random, URL-safe
 // strings (at least 16 characters)."
 
+import { canberraDayKey } from './dates.js';
+
 /**
  * @param {string} [prefix]
  */
@@ -25,7 +27,10 @@ function slugify(text) {
  */
 export function eventSlugFor(title, startAt) {
   const base = slugify(title) || 'untitled';
-  const datePart = startAt ? startAt.slice(0, 10) : null;
+  // The Canberra date, not the first ten characters of the UTC string,
+  // which put the day before in the URL of anything starting before 10am
+  // (11am in daylight saving) Canberra time.
+  const datePart = startAt ? canberraDayKey(startAt) : null;
   const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 4);
   return [base, datePart, suffix].filter(Boolean).join('-');
 }

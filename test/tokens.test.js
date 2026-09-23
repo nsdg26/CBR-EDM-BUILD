@@ -36,3 +36,8 @@ test('eventSlugFor includes the date and stays unique across calls', () => {
   assert.match(a, /^deep-signal-2026-03-14-[a-f0-9]{4}$/);
   assert.notEqual(a, b);
 });
+
+test('eventSlugFor dates the slug in Canberra time, not UTC', () => {
+  // 8am Sat 17 Oct 2026 in Canberra is still the 16th in UTC.
+  assert.match(eventSlugFor('Brekkie Set', '2026-10-16T21:00:00.000Z'), /^brekkie-set-2026-10-17-[0-9a-f]{4}$/);
+});

@@ -11,6 +11,45 @@ All notable changes to this project are documented here. Format follows
   when it matched the headliner, and with no lineup the headliner falls
   back to the title itself, so the name was skipped with nothing drawn in
   its place. The title now only gives way to an act of the same name.
+- Canberra times on a daylight saving weekend saved an hour out. The
+  local-to-UTC conversion measured the offset ten hours after the real
+  instant, so anything from about 4pm Saturday to 2am Sunday on the first
+  weekend of October or April was off: a 10pm Saturday 3 Oct 2026 event
+  would have been stored and shown as 9pm. Events already saved in those
+  windows keep the wrong time until re-saved.
+- Approving a queued edit (from an edit link or an untrusted crew) set the
+  event's status back to "on" and, for a crew edit, cleared its crew and
+  presenter. The forms never send those fields, but the defaults for them
+  were queued and written on approval. Each path now queues only what it
+  can change, and approval whitelists the same, which also covers edits
+  already in the queue. Approving the same change twice is a no-op.
+- A crew edit reset the event's age restriction to unknown, turned
+  Location TBA off and turned equal billing off, since the crew form has
+  no inputs for them. They now keep their current values.
+- The LOCATION DROPPED stamp could never appear: nothing set
+  `location_revealed_at`. It is now set when a published event goes from
+  TBA to a real venue, by admin, trusted crew or an approved change. The
+  admin edit form also bumps the calendar sequence on a published event.
+- Hard deleting an event failed with an error if it had any queued
+  change, contact report or converted email, since D1 enforces foreign
+  keys. It now clears or unlinks them first.
+- A contact message sent with an event id that doesn't exist was lost to
+  the same foreign key. The message is kept, without the link.
+- Calendar feed descriptions showed a literal `\n` between the presenter,
+  lineup and link. Long lines also now fold at 75 bytes, as RFC 5545
+  requires, rather than 75 characters.
+- Crew profile links were stored and shown as given, including
+  `javascript:` URLs. Only http(s) links are kept.
+- The crew profile page's cards and flyers were missing the crew name.
+- The Submissions stat was never recorded, and calendar page views were
+  recorded but never shown.
+- Restoring a rejected submission skipped the publish checks.
+- An age restriction or status outside the allowed values was a server
+  error rather than a message, and "too long" errors now name the field.
+- Event URLs used the UTC date, so an event starting before 10am (11am in
+  daylight saving) had the previous day in its link.
+- `seed/seed.sql` still wrote the dropped `flyer_key` columns, so
+  `npm run db:seed:local` failed.
 - Links inside a paper notice were invisible -- the same trap `.scrap a`
   already fixed for cards. The global `a { color: var(--paper) }` is for
   the dark wall, so on `.error`'s own paper background a link came out
@@ -141,6 +180,24 @@ All notable changes to this project are documented here. Format follows
 - The site URL on the printable poster showing a trailing slash
   (`homeUrl` is always built as `origin + '/'`); stripped for display
   only, the QR code itself is unaffected.
+
+### Security
+- Inbound email attachments are served with a sandboxing CSP and
+  `nosniff`. An emailed SVG counts as an image and could otherwise run
+  script with the admin's session if opened directly.
+- The Access key set is refetched once when a token names an unknown key,
+  so a key rotation no longer locks the admin out for up to an hour.
+
+### Performance
+- Generated flyers are reused across requests on a warm Worker instead
+  of being redrawn for every card on every page load (about 1ms to 0.2ms
+  per card), and the contour tracing loop is about 15% faster with
+  identical output.
+- Date formatting is about 12x faster: the formatters are built once
+  rather than on every call.
+- The calendar page loads only the month on show, not every event ever.
+- The stats page runs one totals query instead of fourteen.
+- The rate limiter uses one atomic statement instead of a read then write.
 
 ### Added
 - The printable poster can draw its QR code as a vinyl record's label,
