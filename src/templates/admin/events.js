@@ -2,6 +2,7 @@ import { html, raw } from '../../lib/escape.js';
 import { render as renderFlyer } from '../../flyers/index.js';
 import { lineupField, renderLineupRows, ageRestrictionField } from '../lineupRow.js';
 import { formatShortDate } from '../../lib/dates.js';
+import { labelFor, STATUS_VALUES } from './labels.js';
 
 /**
  * GET /admin/events. List with search by title, section 10.2.
@@ -25,8 +26,8 @@ export function eventListPage(events, query) {
         ${events.map((event) => html`<tr>
           <td>${event.title || 'Untitled'}</td>
           <td>${event.start_at ? formatShortDate(event.start_at) : '-'}</td>
-          <td>${event.visibility}</td>
-          <td>${event.status}</td>
+          <td>${labelFor('visibility', event.visibility)}</td>
+          <td>${labelFor('status', event.status)}</td>
           <td><a href="/admin/events/${event.id}/edit">Edit</a></td>
         </tr>`)}
       </tbody>
@@ -77,7 +78,7 @@ export function eventFormPage(event, crews, options = {}) {
       ? html`<p class="error">Submitter contact (private, never published): ${event.submitter_contact}</p>`
       : ''}
     ${options.errors?.length
-      ? html`<ul class="field-error">${options.errors.map((error) => html`<li>${error}</li>`)}</ul>`
+      ? html`<ul class="error field-error">${options.errors.map((error) => html`<li>${error}</li>`)}</ul>`
       : ''}
     <form method="post" action="${action}">
       ${FIELD_DEFS_BEFORE_LINEUP.map((def) => renderField(def, event))}
@@ -107,7 +108,7 @@ export function eventFormPage(event, crews, options = {}) {
       <div class="field">
         <label for="status">Status</label>
         <select id="status" name="status">
-          ${['on', 'cancelled', 'sold_out', 'postponed'].map((value) => html`<option value="${value}" ${event.status === value ? raw('selected') : ''}>${value}</option>`)}
+          ${STATUS_VALUES.map((value) => html`<option value="${value}" ${event.status === value ? raw('selected') : ''}>${labelFor('status', value)}</option>`)}
         </select>
       </div>
 
@@ -186,8 +187,9 @@ function adminEventActions(event, options = {}) {
 function generatedFlyerSection(event) {
   const preview = renderFlyer(event, { surface: 'page' });
 
+  // No heading of its own: it sits directly under adminEventActions'
+  // "Flyer" heading, and the two stacked read as a doubled title.
   return html`
-    <h2>Generated flyer</h2>
     <p class="muted">Always rendered with the contour map template.
       ${event.location_tba
         ? 'Location TBA, so this uses a procedural map, never a real one.'

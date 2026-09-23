@@ -23,7 +23,7 @@ export async function handleHome(request, env) {
 
   const { body } = homePage(results);
 
-  const page = String(layout({ title: null, bodyContent: body, bodyClass: 'page-home' }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: null, bodyContent: body, bodyClass: 'page-home' }));
 
   return new Response(page, {
     headers: {

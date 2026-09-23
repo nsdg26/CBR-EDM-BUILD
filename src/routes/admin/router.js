@@ -37,6 +37,10 @@ export async function adminRouter(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+  // Carried on the admin object every handler already receives, so the
+  // shell can mark the current nav link without threading the request
+  // through each page helper.
+  admin.path = path;
 
   if (path === '/admin' && method === 'GET') return handleAdminQueue(request, env, admin);
 

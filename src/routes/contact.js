@@ -11,12 +11,12 @@ const TURNSTILE_SCRIPT = '<script src="https://challenges.cloudflare.com/turnsti
 export async function handleContactForm(request, env) {
   const eventId = new URL(request.url).searchParams.get('event');
   const body = contactFormPage(env.TURNSTILE_SITE_KEY, eventId);
-  const page = String(layout({ title: 'Get in touch', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Get in touch', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
 }
 
 export async function handleContactSent(request, env) {
-  const page = String(layout({ title: 'Message sent', bodyContent: contactConfirmationPage() }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Message sent', bodyContent: contactConfirmationPage() }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 

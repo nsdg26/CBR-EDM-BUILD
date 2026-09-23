@@ -15,7 +15,7 @@ const NO_JS_HEADERS = {
 };
 
 export async function handleEditPage(request, env) {
-  const page = String(layout({ title: 'Edit your listing', bodyContent: editPage() }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Edit your listing', bodyContent: editPage() }));
   return new Response(page, { headers: NO_JS_HEADERS });
 }
 

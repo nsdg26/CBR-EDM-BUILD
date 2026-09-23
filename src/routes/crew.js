@@ -21,7 +21,7 @@ const NO_STORE_HEADERS = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Co
 
 export async function handleCrewPage(request, env) {
   const body = crewDashboardPage(env.TURNSTILE_SITE_KEY);
-  const page = String(layout({ title: 'Crew dashboard', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Crew dashboard', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
   return new Response(page, { headers: NO_STORE_HEADERS });
 }
 

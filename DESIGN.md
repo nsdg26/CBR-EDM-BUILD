@@ -20,6 +20,16 @@ materials, not a UI palette. Refined slightly from the spec's starting point
 | `--stamp-ink` | `#8f1d1d` | Stamp ink | Status stamps only, on paper only |
 | `--sodium` | `#b8722a` | Sodium streetlight | Sparing lighting accent on the wall texture, never as a UI accent colour |
 | `--focus-ring` | `#e8b04a` | Rub-down lettering gold | Keyboard focus only, high contrast against both wall and paper |
+| `--paper-muted` | `#b5b3aa` | Weathered paper | Secondary text on the wall (`.muted`, hints, the admin's signed-in line) |
+| `--toner-soft` | `#3a3835` | Light toner | Secondary text on paper (a card's metadata) |
+| `--border` / `--border-strong` | paper at 20% / 45% | Pencil rule | Dividers; the stronger one under table headings |
+| `--tape` | paper at 60% | Masking tape | The tape strip on a scrap |
+
+Every colour in the stylesheets comes from this table. A new shade gets a
+token here first rather than a hex value where it's used. Selected and
+checked states (the current nav link, a ticked checkbox) use paper and
+toner, the same pairing as a primary button, and errors use `.error`
+(stamp ink on paper) whether on a public form or in the admin.
 
 Contrast check (WCAG 2.2 AA, 4.5:1 body text):
 - `--toner` on `--paper`: 14.7:1.
@@ -56,6 +66,11 @@ Type scale (base 16px, so body text meets the 16px minimum in section 14):
 | `--text-h3` | 20px | 1.3 | Card titles |
 | `--text-h2` | 28px | 1.2 | Section headings ("Coming up", event page title) |
 | `--text-h1` | clamp(40px, 8vw, 88px) | 1.05 | The slogan strip, the one loud element |
+
+Every display-face heading (h1, h2, h3, a card's title) is set in
+capitals, like the site name and the slogan. The one exception is a named
+thing whose own casing carries meaning, such as a harm reduction service
+("CanTEST"), which opts out where it's rendered.
 
 Line length is constrained to under 80 characters with `max-width: 38ch` to
 `45ch` on body text containers, not on the page as a whole.

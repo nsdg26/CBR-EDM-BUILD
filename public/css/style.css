@@ -41,9 +41,16 @@
   --stamp-ink: #8f1d1d;
   --sodium: #b8722a;
   --focus-ring: #e8b04a;
-  /* Matches .site-footer's own divider, so admin list dividers (section
-     16) and other one-off separators use the same subtle line. */
+  /* Secondary text in each of the two contexts: grey on the dark wall
+     (.muted, the admin's signed-in line) and softened toner on paper (a
+     card's metadata). Were hex values repeated where they were used. */
+  --paper-muted: #b5b3aa;
+  --toner-soft: #3a3835;
+  /* The one subtle divider: footer, admin tables and records, the
+     calendar's feed block, the submit form's private field. */
   --border: rgba(217, 216, 210, 0.2);
+  --border-strong: rgba(217, 216, 210, 0.45);
+  --tape: rgba(217, 216, 210, 0.6);
 
   /* Type */
   --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
@@ -270,6 +277,15 @@ select:focus-visible {
   border-color: var(--paper);
 }
 
+/* The page you are on. Nothing in the nav used to say where you were;
+   this is the primary button's paper-and-toner treatment, so it reads as
+   "selected" in the same language as everything else on the site. */
+.site-nav a[aria-current="page"] {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--toner);
+}
+
 /* Paper scraps: event cards. Shape and rotation are set inline per event
    via scrapShapeFor(), see src/lib/scrapShape.js. */
 .scrap {
@@ -294,12 +310,18 @@ select:focus-visible {
   background: var(--paper-faded);
 }
 
+/* Capitals whatever the heading level: an event card's title is an h3 and
+   picked them up from the global h3 rule, while a crew card's is an h2,
+   which had none, so the crews directory was the one set of cards on the
+   site with mixed-case names. */
 .scrap .scrap-title {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-h3);
   margin: 0 0 0.4rem;
   line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .scrap .scrap-title a {
@@ -324,7 +346,7 @@ select:focus-visible {
 .scrap-meta {
   font-size: var(--text-small);
   margin: 0.15rem 0;
-  color: #3a3835;
+  color: var(--toner-soft);
 }
 
 /* Free paragraphs inside a card (an event's notes): the browser's 1em
@@ -349,7 +371,7 @@ select:focus-visible {
   transform: translateX(-50%) rotate(-2deg);
   width: var(--tape-width);
   height: 18px;
-  background: rgba(217, 216, 210, 0.6);
+  background: var(--tape);
 }
 
 /* A generated flyer's inlined SVG has no width/height attribute (only a
@@ -358,6 +380,12 @@ select:focus-visible {
   width: 100%;
   height: auto;
   display: block;
+}
+
+/* The card's title sat almost flush against the bottom of the flyer,
+   closer than any two lines of text below it are to each other. */
+.generated-flyer {
+  margin-bottom: 0.75rem;
 }
 
 /* Status stamps: real text, not images. Section 8.2. */
@@ -571,15 +599,18 @@ select:focus-visible {
   }
 }
 
-/* Today's date, section 7.1 */
+/* Today's date, section 7.1. A paper outline rather than the sodium
+   orange it used to be: DESIGN.md keeps --sodium for light on the wall
+   texture, "never as a UI accent colour", and this was the one place on
+   the site that did. The outline sits round the cell's padding, so it
+   still shows when today is also a filled event day. */
 .calendar td.is-today {
-  outline: 2px solid var(--sodium);
+  outline: 2px solid var(--paper);
   outline-offset: -2px;
 }
 
 .calendar td.is-today span {
   font-weight: 800;
-  color: var(--sodium);
 }
 
 .calendar-nav {
@@ -589,12 +620,22 @@ select:focus-visible {
   margin-bottom: 0.5rem;
 }
 
+/* No underline: under a bare < or > it read as a less-than-or-equal
+   sign. The 44px box is already the affordance, same as a day cell. */
 .calendar-nav a {
   min-height: 44px;
   min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-h3);
+  text-decoration: none;
+}
+
+.calendar-nav a:hover {
+  outline: 1px solid var(--border-strong);
 }
 
 .calendar-nav-label {
@@ -646,7 +687,7 @@ code {
 
 /* Footer, section 6 */
 .site-footer {
-  border-top: 1px solid rgba(217, 216, 210, 0.2);
+  border-top: 1px solid var(--border);
   padding: 2rem 1.25rem;
   font-size: var(--text-small);
   display: grid;
@@ -673,10 +714,19 @@ h1 {
   text-transform: uppercase;
 }
 
+/* Every display-face heading is set in capitals, like the site name, the
+   board's column headings and the event titles. h2 used to be the odd
+   one out in mixed case, so a page went capitals, then lower case, then
+   capitals again (h1, h2, h3) -- "SUBMIT AN EVENT" over "The basics", or
+   "Your crew profile" over "GENERATED FLYER". Named things that must keep
+   their own casing (a harm reduction service like CanTEST) opt out where
+   they're rendered, see .hr-link h3. */
 h2 {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* h3 had no rule at all, so the calendar's per-day headings and the crew
@@ -804,7 +854,7 @@ button[aria-disabled="true"] {
 }
 
 .muted {
-  color: #b5b3aa;
+  color: var(--paper-muted);
   font-size: var(--text-small);
 }
 
@@ -895,14 +945,26 @@ details.field summary {
   width: 1.15rem;
   height: 1.15rem;
   flex: none;
+  /* The browser's own margin nudged the box a few pixels in from the
+     left edge every label and input above it lines up on. */
+  margin: 0;
+}
+
+/* Ticked boxes were the browser's default blue, the only blue anywhere
+   on the site. Paper with a toner tick instead, the same pairing as a
+   primary button. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--paper);
 }
 
 /* DJ rows, section 9.1 rework: name, set time, genre, a headliner checkbox
-   and a remove button, all in one row. .field's default 40rem max-width
-   (set above) is too narrow to fit all of that on one line even on a
-   normal desktop viewport, so the field wrapping the rows gets more room. */
+   and a remove button, all in one row. This used to widen the field to
+   56rem, but the row's flex bases add up to about 36rem, so it already
+   fits .field's 40rem -- and at 56rem it ran 16rem past the right edge
+   every other input on the form stops at. */
 .field-lineup {
-  max-width: 56rem;
+  max-width: 40rem;
 }
 
 /* The lineup field's group label. Not a <label> element: it labels a
@@ -948,6 +1010,26 @@ details.field summary {
 .lineup-row [data-remove-dj] {
   padding: 0.4rem 0.7rem;
   min-height: auto;
+}
+
+/* On a phone the row broke wherever the widths happened to fall: the name
+   and a truncated "Set time (optio..." on one line, genre, headliner and
+   remove on the next. Here it's name on its own line, then set time and
+   genre side by side, then headliner and remove. */
+@media (max-width: 480px) {
+  .lineup-row [data-lineup-name] {
+    flex-basis: 100%;
+  }
+
+  .lineup-row [data-lineup-time],
+  .lineup-row [data-lineup-genre] {
+    flex-basis: calc(50% - 0.25rem);
+  }
+
+  .lineup-row {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 /* Reduced motion and high contrast, sections 13.5 and 14 */

@@ -181,6 +181,35 @@ All notable changes to this project are documented here. Format follows
   (`homeUrl` is always built as `origin + '/'`); stripped for display
   only, the QR code itself is unaffected.
 
+### Changed (styling consistency review)
+- Every display heading is now in capitals. h2 was the odd one out in
+  mixed case, so pages went capitals, lower case, capitals (h1, h2, h3),
+  and crew cards were the only cards with mixed-case names.
+- The nav marks the page you are on (public and admin), in the primary
+  button's paper and toner.
+- Checkboxes are paper with a toner tick instead of the browser's default
+  blue, the only blue on the site, and line up with the labels above.
+- Today on the calendar is outlined in paper, not the sodium orange that
+  DESIGN.md reserves for the wall texture. The month arrows lost their
+  underline, which made them read as less-than-or-equal signs.
+- The DJ row is the same 40rem as every other field on the admin form,
+  and on a phone it stacks cleanly (name, then set time and genre side by
+  side) instead of truncating its placeholders.
+- A card's title no longer sits flush against its flyer.
+- Admin screens show plain English instead of stored values: statuses
+  ("Sold out", not sold_out), visibility, email state, and the pending
+  change comparison, which now shows dates in Canberra time, the lineup
+  one act per line, and only the fields that actually change. It also now
+  includes the presenter, location and equal billing fields, which an
+  edit link can change but the comparison never showed.
+- Admin validation errors use the site's `.error` notice instead of a
+  pink used nowhere else. The admin event form's flyer section has one
+  heading, not two stacked.
+- The harm reduction admin lists links by region and sort order, like the
+  public page, instead of interleaving the regions.
+- The 404 page has a heading and a link back to the board.
+- Stray hex colours in the stylesheets are tokens now (see DESIGN.md).
+
 ### Security
 - Inbound email attachments are served with a sandboxing CSP and
   `nosniff`. An emailed SVG counts as an image and could otherwise run

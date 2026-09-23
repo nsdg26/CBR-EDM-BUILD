@@ -1,5 +1,6 @@
 import { html } from '../../lib/escape.js';
 import { formatShortDate } from '../../lib/dates.js';
+import { labelFor } from './labels.js';
 
 /**
  * GET /admin/inbound-emails. Section 10.6.
@@ -16,7 +17,7 @@ export function inboundEmailListPage(emails) {
           <td>${email.from_address}</td>
           <td>${email.subject || '(no subject)'}</td>
           <td>${formatShortDate(email.received_at)}</td>
-          <td>${email.state}</td>
+          <td>${labelFor('inbound_state', email.state)}</td>
           <td><a href="/admin/inbound-emails/${email.id}">View</a></td>
         </tr>`)}
       </tbody>

@@ -13,11 +13,23 @@ function navLinks() {
 }
 
 /**
+ * Whether a nav link is the page being shown, or a page under it (an
+ * archive year under /archive, a crew's profile under /crews).
+ * @param {string} href
+ * @param {string} [path]
+ */
+export function isCurrentNav(href, path) {
+  if (!path) return false;
+  return path === href || path.startsWith(`${href}/`);
+}
+
+/**
  * The shared page shell: header with site name and slogan, footer with the
  * required links (section 6), and a slot for page content.
- * @param {{ title: string, bodyContent: string, extraHead?: string, bodyClass?: string }} options
+ * @param {{ title: string, bodyContent: string, extraHead?: string, bodyClass?: string, path?: string }} options
+ *   path - the request's pathname, to mark the matching nav link as current
  */
-export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
+export function layout({ title, bodyContent, extraHead = '', bodyClass = '', path = '' }) {
   return html`<!doctype html>
 <html lang="en-AU">
 <head>
@@ -48,7 +60,7 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
       </div>
       <nav aria-label="Main">
         <ul class="site-nav">
-          ${navLinks().map(([href, label]) => html`<li><a href="${href}">${label}</a></li>`)}
+          ${navLinks().map(([href, label]) => html`<li><a href="${href}"${isCurrentNav(href, path) ? raw(' aria-current="page"') : ''}>${label}</a></li>`)}
         </ul>
       </nav>
     </div>

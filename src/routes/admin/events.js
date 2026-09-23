@@ -10,7 +10,7 @@ import { normaliseEvent } from '../../flyers/normalise.js';
 import { terrainFieldsFor } from '../../lib/geocode.js';
 
 function page(admin, title, body) {
-  return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email })), {
+  return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email, path: admin.path })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

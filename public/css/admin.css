@@ -59,7 +59,7 @@ body.page-admin .slogan-strip {
 .admin-signed-in {
   margin: 0.75rem 0 0;
   font-size: var(--text-small);
-  color: #b5b3aa;
+  color: var(--paper-muted);
   text-align: center;
 }
 
@@ -116,11 +116,16 @@ body.page-admin .slogan-strip {
   font-size: var(--text-small);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-bottom: 2px solid rgba(217, 216, 210, 0.45);
+  border-bottom: 2px solid var(--border-strong);
 }
 
 .page-admin tbody tr:last-child td {
   border-bottom: 0;
+}
+
+/* A change's before/after values: a lineup is one act per line. */
+.change-comparison td {
+  white-space: pre-line;
 }
 
 /* Rows are links to somewhere in half these tables, so the link needs to
@@ -200,14 +205,14 @@ body.page-admin .slogan-strip {
   min-width: 0;
 }
 
-/* Validation messages above a form. .error (style.css) is the paper
-   notice block; this is the bare list of field problems, so it is set in
-   the stamp's ink straight on the wall. */
+/* Validation messages above a form. The list also carries .error, the
+   site's one notice style (paper, stamp ink); this only spaces it. It used
+   to be its own pink (#e08a8a) straight on the wall, a colour nothing
+   else on the site uses. */
 .field-error {
-  color: #e08a8a;
-  font-size: var(--text-small);
   margin: 0 0 1rem;
-  padding: 0;
+  display: grid;
+  gap: 0.25rem;
 }
 
 /* Generated flyer preview, FLYER-ENGINE-SPEC.md section 13: the inlined

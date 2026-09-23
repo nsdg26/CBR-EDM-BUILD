@@ -14,7 +14,7 @@ export async function handleCrewsDirectory(request, env) {
      GROUP BY crews.id ORDER BY crews.name`,
   ).all();
 
-  const page = String(layout({ title: 'Crews', bodyContent: crewsDirectoryPage(results) }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Crews', bodyContent: crewsDirectoryPage(results) }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
 }
 
@@ -35,6 +35,6 @@ export async function handleCrewProfile(request, env, slug) {
   const upcoming = results.filter((event) => !isEventPast(event, now));
   const past = results.filter((event) => isEventPast(event, now)).reverse();
 
-  const page = String(layout({ title: crew.name, bodyContent: crewProfilePage(crew, upcoming, past) }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: crew.name, bodyContent: crewProfilePage(crew, upcoming, past) }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
 }

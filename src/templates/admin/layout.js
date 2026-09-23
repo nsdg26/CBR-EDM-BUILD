@@ -1,5 +1,6 @@
 import { html, raw } from '../../lib/escape.js';
 import { config } from '../../config.js';
+import { isCurrentNav } from '../layout.js';
 
 const NAV = [
   ['/admin', 'Queue'],
@@ -14,6 +15,16 @@ const NAV = [
 ];
 
 /**
+ * The Queue link is /admin itself, which every other admin path starts
+ * with, so it only counts as current on an exact match.
+ * @param {string} href
+ * @param {string} path
+ */
+function isAdminNavCurrent(href, path) {
+  return href === '/admin' ? path === '/admin' : isCurrentNav(href, path);
+}
+
+/**
  * The admin panel shell. Section 10.2 asks for plain and functional, and
  * it still is -- tables, forms and stacked records, nothing decorative
  * that gets in the way of a job. What changed (owner request) is that it
@@ -25,9 +36,9 @@ const NAV = [
  * That also means admin.css no longer keeps its own copy of the fonts,
  * the colours or the form and lineup-row styling to drift out of step.
  * Still no-store, still no public-site scripts it has no use for.
- * @param {{ title: string, bodyContent: string, email: string, now?: Date }} options
+ * @param {{ title: string, bodyContent: string, email: string, path?: string, now?: Date }} options
  */
-export function adminLayout({ title, bodyContent, email, now = new Date() }) {
+export function adminLayout({ title, bodyContent, email, path = '', now = new Date() }) {
   // Date and copy both come from config.reminderBanner (config.js), which
   // used to declare them while this file hardcoded its own copy of each --
   // so editing the config did nothing.
@@ -60,7 +71,7 @@ export function adminLayout({ title, bodyContent, email, now = new Date() }) {
       </div>
       <nav aria-label="Admin">
         <ul class="site-nav">
-          ${NAV.map(([href, label]) => html`<li><a href="${href}">${label}</a></li>`)}
+          ${NAV.map(([href, label]) => html`<li><a href="${href}"${isAdminNavCurrent(href, path) ? raw(' aria-current="page"') : ''}>${label}</a></li>`)}
           <li><a href="/" class="admin-nav-site">View the site</a></li>
         </ul>
       </nav>

@@ -17,13 +17,13 @@ export async function handleSubmitForm(request, env) {
   ).all();
 
   const body = submitFormPage(env.TURNSTILE_SITE_KEY, crews.map((crew) => crew.name));
-  const page = String(layout({ title: 'Submit an event', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Submit an event', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
 }
 
 export async function handleSubmitConfirmation(request, env) {
   const body = submitConfirmationPage();
-  const page = String(layout({ title: 'On the wall', bodyContent: body }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'On the wall', bodyContent: body }));
   return new Response(page, {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });

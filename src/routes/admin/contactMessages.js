@@ -4,7 +4,7 @@ import { notFound } from '../../lib/http.js';
 import { formatShortDate } from '../../lib/dates.js';
 
 function page(admin, body) {
-  return new Response(String(adminLayout({ title: 'Contact messages', bodyContent: body, email: admin.email })), {
+  return new Response(String(adminLayout({ title: 'Contact messages', bodyContent: body, email: admin.email, path: admin.path })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

@@ -28,7 +28,11 @@ const LIST_SQL = `
     events.venue_name AS current_venue_name, events.venue_address AS current_venue_address,
     events.genres AS current_genres, events.lineup AS current_lineup,
     events.ticket_url AS current_ticket_url, events.notes AS current_notes,
-    events.age_restriction AS current_age_restriction, events.status AS current_status
+    events.age_restriction AS current_age_restriction, events.status AS current_status,
+    events.presented_by AS current_presented_by, events.location_tba AS current_location_tba,
+    events.location_reveal_at AS current_location_reveal_at,
+    events.location_how_to_find AS current_location_how_to_find,
+    events.lineup_equal_billing AS current_lineup_equal_billing
   FROM event_changes JOIN events ON events.id = event_changes.event_id
   WHERE event_changes.state = 'pending'
   ORDER BY event_changes.created_at
@@ -37,7 +41,7 @@ const LIST_SQL = `
 export async function handleChangeList(request, env, admin) {
   const { results } = await env.DB.prepare(LIST_SQL).all();
   const body = changeListPage(results);
-  return new Response(String(adminLayout({ title: 'Pending changes', bodyContent: body, email: admin.email })), {
+  return new Response(String(adminLayout({ title: 'Pending changes', bodyContent: body, email: admin.email, path: admin.path })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

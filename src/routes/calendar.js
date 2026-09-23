@@ -36,7 +36,7 @@ export async function handleCalendarPage(request, env) {
   if (!isBotRequest(request)) await recordCount(env, 'calendar_view');
 
   const body = String(calendarPage(results, year, month));
-  const page = String(layout({ title: 'Calendar', bodyContent: body }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: 'Calendar', bodyContent: body }));
 
   return new Response(page, {
     headers: {

@@ -7,7 +7,10 @@ import { html } from './escape.js';
  * private event never reveals its existence through a different error.
  */
 export function notFound() {
-  const body = html`<p>That page does not exist, or is not published.</p>`;
+  // Every other page opens with an h1; this one was a lone paragraph.
+  const body = html`<h1>Not found</h1>
+    <p>That page does not exist, or is not published.</p>
+    <p><a href="/">Back to the board</a></p>`;
   return new Response(String(layout({ title: 'Not found', bodyContent: body })), {
     status: 404,
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' },

@@ -19,7 +19,7 @@ export async function handleArchive(request, env, year) {
     ? archiveYear(year, past.filter((event) => Number(canberraDayKey(event.start_at).slice(0, 4)) === year))
     : archiveIndex([...new Set(past.map((event) => Number(canberraDayKey(event.start_at).slice(0, 4))))].sort((a, b) => b - a));
 
-  const page = String(layout({ title: year ? `Archive: ${year}` : 'Archive', bodyContent: body }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: year ? `Archive: ${year}` : 'Archive', bodyContent: body }));
 
   return new Response(page, {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' },

@@ -156,9 +156,23 @@ function canberraLocalToUtc(wallClockAsUtc) {
  * @param {string|null} isoUtc
  */
 export function formatShortDate(isoUtc) {
-  if (!isoUtc) return '';
+  // An unparseable value shows as blank rather than throwing a RangeError
+  // out of whichever admin page was listing it.
+  if (!isoUtc || Number.isNaN(new Date(isoUtc).getTime())) return '';
   const parts = toCanberraParts(isoUtc);
   return `${parts.day} ${MONTHS_SHORT[parts.month - 1]} ${parts.year}`;
+}
+
+/**
+ * A Canberra-local date and time for a UTC ISO timestamp, e.g.
+ * "Sat 17 Oct 2026, 10pm": one point in time, where formatEventDateTime
+ * describes an event's whole start-to-end span.
+ * @param {string|null} isoUtc
+ */
+export function formatDateTime(isoUtc) {
+  if (!isoUtc || Number.isNaN(new Date(isoUtc).getTime())) return '';
+  const parts = toCanberraParts(isoUtc);
+  return `${formatDate(parts, { includeYear: true })}, ${formatTime(parts)}`;
 }
 
 /**

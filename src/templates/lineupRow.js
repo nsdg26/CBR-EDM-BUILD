@@ -13,8 +13,8 @@ import { parseLineupText, splitNote } from '../lib/lineup.js';
 function lineupRowFields(values = {}) {
   return html`<div class="lineup-row" data-lineup-row>
     <input type="text" data-lineup-name placeholder="DJ name" aria-label="DJ name" value="${values.name || ''}">
-    <input type="text" data-lineup-time placeholder="Set time (optional)" aria-label="Set time, optional" value="${values.time || ''}">
-    <input type="text" data-lineup-genre placeholder="Genre (optional)" aria-label="Genre, optional" value="${values.genre || ''}">
+    <input type="text" data-lineup-time placeholder="Set time" aria-label="Set time, optional" value="${values.time || ''}">
+    <input type="text" data-lineup-genre placeholder="Genre" aria-label="Genre, optional" value="${values.genre || ''}">
     <label class="lineup-row-headliner"><input type="checkbox" data-lineup-headliner ${values.headliner ? raw('checked') : ''}> Headliner</label>
     <button type="button" class="secondary" data-remove-dj aria-label="Remove this DJ">&times;</button>
   </div>`;

@@ -24,7 +24,7 @@ export async function handleEventPage(request, env, slug) {
 
   const { body, dateText } = eventPage(event);
   const extraHead = String(eventOgTags(event, dateText));
-  const page = String(layout({ title: event.title || 'Event', bodyContent: body, extraHead }));
+  const page = String(layout({ path: new URL(request.url).pathname, title: event.title || 'Event', bodyContent: body, extraHead }));
 
   return new Response(page, {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' },

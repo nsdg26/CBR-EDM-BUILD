@@ -31,7 +31,7 @@ export async function handleAdminQueue(request, env, admin) {
     </table>
   `;
 
-  return new Response(String(adminLayout({ title: 'Queue', bodyContent: body, email: admin.email })), {
+  return new Response(String(adminLayout({ title: 'Queue', bodyContent: body, email: admin.email, path: admin.path })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

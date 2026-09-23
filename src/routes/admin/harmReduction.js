@@ -6,13 +6,19 @@ import { getSetting, setSetting } from '../../lib/settings.js';
 import { HARM_REDUCTION_INTRO_KEY, HARM_REDUCTION_INTRO_DEFAULT } from '../harmReduction.js';
 
 function page(admin, body) {
-  return new Response(String(adminLayout({ title: 'Harm reduction links', bodyContent: body, email: admin.email })), {
+  return new Response(String(adminLayout({ title: 'Harm reduction links', bodyContent: body, email: admin.email, path: admin.path })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }
 
 export async function handleHarmReductionList(request, env, admin) {
-  const { results } = await env.DB.prepare('SELECT * FROM harm_reduction_links').all();
+  // Grouped the way the public page shows them (ACT, NSW, National, each in
+  // its sort order), rather than in whatever order the rows were stored,
+  // which interleaved the regions and hid what the sort order does.
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM harm_reduction_links
+     ORDER BY CASE region WHEN 'ACT' THEN 0 WHEN 'NSW' THEN 1 ELSE 2 END, sort_order, title`,
+  ).all();
   const intro = await getSetting(env, HARM_REDUCTION_INTRO_KEY, HARM_REDUCTION_INTRO_DEFAULT);
   return page(admin, harmReductionAdminPage(results, intro));
 }
