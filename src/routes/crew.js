@@ -2,13 +2,14 @@ import { layout } from '../templates/layout.js';
 import { crewDashboardPage } from '../templates/crew.js';
 import { hashToken } from '../lib/tokens.js';
 import {
-  readEventFields, validateEventFields, asFormDataLike, pickFields, locationRevealedAtFor, CREW_EDIT_FIELDS,
+  readEventFields, validateEventFields, asFormDataLike, pickFields, locationRevealedAtFor, isHttpUrl, CREW_EDIT_FIELDS,
 } from '../lib/eventFields.js';
 import { utcToCanberraLocalInput } from '../lib/dates.js';
 import { generateId, eventSlugFor } from '../lib/ids.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { sendAdminAlert } from '../lib/email.js';
+import { recordCount } from '../lib/analytics.js';
 import { render } from '../flyers/index.js';
 import { resolveTemplate, TEMPLATES } from '../flyers/manifest.js';
 import { normaliseEvent } from '../flyers/normalise.js';
@@ -83,8 +84,14 @@ export async function handleCrewProfileUpdate(request, env) {
   if (!crew.trusted) return jsonResponse({ ok: false, error: 'Only trusted crews can edit their profile.' }, 403);
 
   const blurb = String(body.blurb || '').slice(0, 1000);
+  // Section 12: crew links must be http(s), since they're rendered as
+  // hrefs on the public profile page. These were stored as given, so a
+  // javascript: or data: URL went straight onto the page.
   const links = Array.isArray(body.links)
-    ? body.links.slice(0, 20).map((link) => ({ label: String(link.label || '').slice(0, 100), url: String(link.url || '').slice(0, 500) }))
+    ? body.links.slice(0, 20)
+      .filter((link) => link && typeof link === 'object')
+      .map((link) => ({ label: String(link.label || '').slice(0, 100), url: String(link.url || '').trim().slice(0, 500) }))
+      .filter((link) => isHttpUrl(link.url))
     : [];
 
   await env.DB.prepare('UPDATE crews SET blurb = ?, links_json = ?, updated_at = ? WHERE id = ?')
@@ -143,6 +150,8 @@ export async function handleCrewEventCreate(request, env) {
     willPublish ? 'published' : 'pending', willPublish ? 1 : 0, now, now, willPublish ? now : null, flyerTemplate,
     fields.location_tba, terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid,
   ).run();
+
+  await recordCount(env, 'submission', 'crew');
 
   // FLYER-ENGINE-SPEC.md section 8: a trusted crew publishing straight
   // from creation skips the admin publish handler entirely, so the

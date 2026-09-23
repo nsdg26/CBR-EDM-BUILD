@@ -155,7 +155,7 @@ function adminEventActions(event, options = {}) {
       ${event.visibility === 'removed' || event.visibility === 'rejected'
         ? html`<form method="post" action="/admin/events/${event.id}/restore"><button type="submit">Restore to published</button></form>`
         : ''}
-      <form method="post" action="/admin/events/${event.id}/delete" data-confirm="Permanently delete this event and its images? This cannot be undone.">
+      <form method="post" action="/admin/events/${event.id}/delete" data-confirm="Permanently delete this event? This cannot be undone.">
         <button type="submit" class="danger">Delete permanently</button>
       </form>
     </div>

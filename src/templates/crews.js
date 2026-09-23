@@ -1,6 +1,7 @@
 import { html } from '../lib/escape.js';
 import { eventCard } from './eventCard.js';
 import { config } from '../config.js';
+import { isHttpUrl } from '../lib/eventFields.js';
 
 /**
  * GET /crews. Section 16: all listed crews, alphabetical, each a small
@@ -35,6 +36,8 @@ export function crewProfilePage(crew, upcoming, past) {
   } catch {
     links = [];
   }
+  // Also checked on save; this covers links stored before that was.
+  links = Array.isArray(links) ? links.filter((link) => link && isHttpUrl(link.url)) : [];
 
   return html`
     <h1>${crew.name}</h1>

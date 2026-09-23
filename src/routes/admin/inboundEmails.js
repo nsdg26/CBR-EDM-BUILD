@@ -36,8 +36,19 @@ export async function handleInboundEmailAttachment(request, env, id, index) {
   const object = await env.FLYERS.get(attachment.r2_key);
   if (!object) return new Response('Not found', { status: 404 });
 
+  // The content type is whatever the sender claimed, and this is served
+  // from the site's own origin to a signed-in admin. An emailed SVG (which
+  // counts as image/*) can carry a <script>, and opening its URL directly
+  // would run it with the admin's session. The sandbox CSP stops any
+  // script in the file, and nosniff stops a browser second-guessing the
+  // type. Neither affects the <img> previews the admin pages show.
   return new Response(object.body, {
-    headers: { 'Content-Type': attachment.content_type, 'Cache-Control': 'no-store' },
+    headers: {
+      'Content-Type': attachment.content_type,
+      'Cache-Control': 'no-store',
+      'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
+      'X-Content-Type-Options': 'nosniff',
+    },
   });
 }
 

@@ -26,11 +26,14 @@ export async function handleCrewProfile(request, env, slug) {
   if (!crew) return notFound();
 
   const { results } = await env.DB.prepare(
-    "SELECT * FROM events WHERE crew_id = ? AND visibility = 'published' ORDER BY start_at",
+    `SELECT events.*, crews.name AS crew_name, crews.slug AS crew_slug
+     FROM events JOIN crews ON crews.id = events.crew_id
+     WHERE events.crew_id = ? AND events.visibility = 'published' ORDER BY events.start_at`,
   ).bind(crew.id).all();
 
-  const upcoming = results.filter((event) => !isEventPast(event));
-  const past = results.filter((event) => isEventPast(event)).reverse();
+  const now = new Date();
+  const upcoming = results.filter((event) => !isEventPast(event, now));
+  const past = results.filter((event) => isEventPast(event, now)).reverse();
 
   const page = String(layout({ title: crew.name, bodyContent: crewProfilePage(crew, upcoming, past) }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });

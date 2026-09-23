@@ -15,23 +15,40 @@ function icsEscape(text) {
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
-    .replace(/\n/g, '\\n');
+    .replace(/\r\n?|\n/g, '\\n');
 }
+
+const encoder = new TextEncoder();
 
 /**
  * Folds a single content line to at most 75 octets per output line, with a
  * leading space marking each continuation, per RFC 5545 section 3.1.
+ * Counts UTF-8 bytes, not characters, and never splits a character: an act
+ * name with accents or an emoji used to push a line past 75 octets, or cut
+ * a surrogate pair in half.
  * @param {string} line
  */
 function foldLine(line) {
-  if (line.length <= LINE_LENGTH) return line;
-  let out = line.slice(0, LINE_LENGTH);
-  let rest = line.slice(LINE_LENGTH);
-  while (rest.length) {
-    out += '\r\n ' + rest.slice(0, LINE_LENGTH - 1);
-    rest = rest.slice(LINE_LENGTH - 1);
+  if (encoder.encode(line).length <= LINE_LENGTH) return line;
+  const lines = [];
+  let current = '';
+  let currentBytes = 0;
+  // The first line gets the full 75; each continuation spends one on its
+  // leading space.
+  let limit = LINE_LENGTH;
+  for (const char of line) {
+    const charBytes = encoder.encode(char).length;
+    if (currentBytes + charBytes > limit) {
+      lines.push(current);
+      current = '';
+      currentBytes = 0;
+      limit = LINE_LENGTH - 1;
+    }
+    current += char;
+    currentBytes += charBytes;
   }
-  return out;
+  lines.push(current);
+  return lines.join('\r\n ');
 }
 
 function toIcsDateUtc(isoUtc) {
@@ -71,7 +88,11 @@ export function eventToVEvent(event, domain, now = new Date()) {
     `DTEND:${dtEnd}`,
     `SUMMARY:${icsEscape(event.title || 'Untitled event')}`,
     location ? `LOCATION:${icsEscape(location)}` : null,
-    `DESCRIPTION:${icsEscape(descriptionParts.join('\\n'))}`,
+    // Joined with a real newline, which icsEscape turns into the escape.
+    // Joining with an already-escaped backslash-n got its backslash
+    // escaped a second time, so calendar apps showed a literal "\n"
+    // between the parts instead of a line break.
+    `DESCRIPTION:${icsEscape(descriptionParts.join('\n'))}`,
     `URL:https://${domain}/e/${event.slug}`,
     event.status === 'cancelled' ? 'STATUS:CANCELLED' : null,
     'END:VEVENT',

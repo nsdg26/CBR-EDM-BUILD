@@ -48,7 +48,15 @@ export async function handleContactApi(request, env) {
 
   const name = (formData.get('name') || '').slice(0, 200) || null;
   const replyContact = (formData.get('reply_contact') || '').slice(0, 300) || null;
-  const eventId = formData.get('event_id') || null;
+  // The hidden field comes from ?event= on the contact page, which anyone
+  // can edit. contact_messages.event_id references events(id) and D1
+  // enforces that, so an id that doesn't exist failed the INSERT as a 500
+  // and lost the message. Keep the message, drop the bad link.
+  let eventId = formData.get('event_id') || null;
+  if (eventId) {
+    const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(eventId).first();
+    if (!event) eventId = null;
+  }
 
   const id = generateId('msg');
   await env.DB.prepare(

@@ -44,7 +44,12 @@ export async function handleFlyer(request, env, eventId) {
   const response = new Response(result.svg, {
     headers: {
       'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      // Short, not immutable: this URL stays the same when the event is
+      // edited, rerolled or goes past, so a year-long immutable cache kept
+      // serving the old artwork to anyone who had fetched it. The edge
+      // cache above is keyed on the flyer's data and still skips the
+      // re-render while nothing has changed.
+      'Cache-Control': 'public, max-age=300',
       'X-Flyer-Cache-Key': cacheKey,
     },
   });

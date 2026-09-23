@@ -207,7 +207,16 @@ function simpleVisibilityChange(newVisibility) {
 
 export const handleEventReject = simpleVisibilityChange('rejected');
 export const handleEventRemove = simpleVisibilityChange('removed');
-export const handleEventRestore = simpleVisibilityChange('published');
+
+/**
+ * POST /admin/events/:id/restore. Puts an event back on the board, so it
+ * goes through the same rules as publishing: a restored event that was
+ * never published before (a rejected submission) needs its title and
+ * start date, a published_at, and its flyer template frozen.
+ */
+export async function handleEventRestore(request, env, admin, id) {
+  return handleEventPublish(request, env, admin, id);
+}
 
 /**
  * POST /admin/events/:id/reissue-edit-link. Section 9.2: issuing a new one
@@ -238,10 +247,6 @@ export async function handleEventRevokeEditLink(request, env, admin, id) {
 }
 
 /**
- * POST /admin/events/:id/delete. Section 9.4: a genuine hard delete,
- * including its R2 images.
- */
-/**
  * POST /admin/events/:id/reroll-flyer. FLYER-ENGINE-SPEC.md section 13:
  * the only way a generated flyer changes appearance without a data or
  * engine change.
@@ -266,11 +271,25 @@ export async function handleEventSetFlyerTemplate(request, env, admin, id) {
   return Response.redirect(new URL(`/admin/events/${id}/edit`, request.url), 303);
 }
 
+/**
+ * POST /admin/events/:id/delete. Section 9.4: a genuine hard delete.
+ * event_changes, contact_messages and inbound_emails all reference
+ * events(id), and D1 enforces foreign keys, so deleting the event row on
+ * its own failed with a 500 for any event that had ever had an edit, a
+ * request, a report or an email converted into it. Its queued changes go
+ * with it; a contact message or email keeps its own record and just loses
+ * the link. One batch, so it's all or nothing.
+ */
 export async function handleEventDelete(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(id).first();
   if (!event) return notFound();
 
-  await env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id).run();
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM event_changes WHERE event_id = ?').bind(id),
+    env.DB.prepare('UPDATE contact_messages SET event_id = NULL WHERE event_id = ?').bind(id),
+    env.DB.prepare('UPDATE inbound_emails SET event_id = NULL WHERE event_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id),
+  ]);
 
   return Response.redirect(new URL('/admin/events', request.url), 303);
 }

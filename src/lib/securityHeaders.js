@@ -43,6 +43,13 @@ export async function withSecurityHeaders(response, options = {}, env) {
   // into every route just to render an HTML comment.
   const buildId = env?.CF_VERSION_METADATA?.id ? env.CF_VERSION_METADATA.id.slice(0, 8) : 'dev';
 
+  // A 304 (or 204) must not be given a body, even an empty string: the
+  // Response constructor throws for one, which turned a conditional
+  // request for an HTML asset into a 500.
+  if (response.body === null || [101, 204, 205, 304].includes(response.status)) {
+    return new Response(null, { status: response.status, statusText: response.statusText, headers });
+  }
+
   return new Response(
     (await response.text()).replace('CF_VERSION_ID', buildId),
     { status: response.status, statusText: response.statusText, headers },

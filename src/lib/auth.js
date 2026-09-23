@@ -13,14 +13,14 @@ const JWKS_CACHE_TTL_MS = 60 * 60 * 1000;
 // from fetching the certs endpoint on every admin request.
 let jwksCache = null;
 
-async function getJwks(teamDomain) {
-  if (jwksCache && Date.now() - jwksCache.fetchedAt < JWKS_CACHE_TTL_MS) {
+async function getJwks(teamDomain, { refresh = false } = {}) {
+  if (!refresh && jwksCache && jwksCache.teamDomain === teamDomain && Date.now() - jwksCache.fetchedAt < JWKS_CACHE_TTL_MS) {
     return jwksCache.keys;
   }
   const response = await fetch(`https://${teamDomain}/cdn-cgi/access/certs`);
   if (!response.ok) throw new Error('Failed to fetch Access certs');
   const data = await response.json();
-  jwksCache = { keys: data.keys, fetchedAt: Date.now() };
+  jwksCache = { keys: data.keys, teamDomain, fetchedAt: Date.now() };
   return data.keys;
 }
 
@@ -75,25 +75,41 @@ export async function verifyAccessJwt(request, env) {
     return null;
   }
 
-  const jwk = keys.find((key) => key.kid === header.kid);
-  if (!jwk) return null;
+  let jwk = keys.find((key) => key.kid === header.kid);
+  if (!jwk) {
+    // Access rotates its signing keys. A token signed with a key newer than
+    // the cached set used to be refused until the cache aged out, locking
+    // the admin out for up to an hour; refetch once before giving up.
+    try {
+      keys = await getJwks(teamDomain, { refresh: true });
+    } catch {
+      return null;
+    }
+    jwk = keys.find((key) => key.kid === header.kid);
+    if (!jwk) return null;
+  }
 
-  const cryptoKey = await crypto.subtle.importKey(
-    'jwk',
-    jwk,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['verify'],
-  );
+  try {
+    const cryptoKey = await crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['verify'],
+    );
 
-  const valid = await crypto.subtle.verify(
-    'RSASSA-PKCS1-v1_5',
-    cryptoKey,
-    signature,
-    new TextEncoder().encode(signedData),
-  );
+    const valid = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5',
+      cryptoKey,
+      signature,
+      new TextEncoder().encode(signedData),
+    );
 
-  return valid ? payload : null;
+    return valid ? payload : null;
+  } catch {
+    // A key or signature Web Crypto can't use is a failed check, not a 500.
+    return null;
+  }
 }
 
 /**

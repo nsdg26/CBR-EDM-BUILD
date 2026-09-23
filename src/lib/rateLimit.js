@@ -16,16 +16,14 @@ export async function checkRateLimit(request, env, bucket, limit) {
   const salt = env.RATE_LIMIT_SALT || 'local-dev-salt-not-for-production';
   const keyHash = await hashToken(`${salt}:${day}:${bucket}:${ip}`);
 
+  // Increment and read back in one statement: one D1 round trip instead of
+  // a SELECT then an INSERT, and no gap between the two for a burst of
+  // parallel requests to all read the same under-limit count.
   const row = await env.DB.prepare(
-    'SELECT count FROM rate_limits WHERE bucket = ? AND key_hash = ? AND day = ?',
+    `INSERT INTO rate_limits (bucket, key_hash, day, count) VALUES (?, ?, ?, 1)
+     ON CONFLICT(bucket, key_hash, day) DO UPDATE SET count = count + 1
+     RETURNING count`,
   ).bind(bucket, keyHash, day).first();
 
-  if (row && row.count >= limit) return false;
-
-  await env.DB.prepare(
-    `INSERT INTO rate_limits (bucket, key_hash, day, count) VALUES (?, ?, ?, 1)
-     ON CONFLICT(bucket, key_hash, day) DO UPDATE SET count = count + 1`,
-  ).bind(bucket, keyHash, day).run();
-
-  return true;
+  return row.count <= limit;
 }

@@ -6,6 +6,7 @@ import { generateToken, hashToken } from '../lib/tokens.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { sendAdminAlert } from '../lib/email.js';
+import { recordCount } from '../lib/analytics.js';
 import { terrainFieldsFor, checkVenueRealness, venueNotFoundMessage } from '../lib/geocode.js';
 
 const TURNSTILE_SCRIPT = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
@@ -102,6 +103,8 @@ export async function handleSubmissionApi(request, env) {
     editTokenHash, willPublish ? 1 : 0, now, now, willPublish ? now : null,
     terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid,
   ).run();
+
+  await recordCount(env, 'submission', source);
 
   const adminUrl = new URL(`/admin/events/${id}/edit`, request.url).toString();
   await sendAdminAlert(env, {

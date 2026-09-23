@@ -48,6 +48,7 @@ function fakeDb({ crews, events }) {
                 events.find((e) => e.id === id).flyer_template = flyerTemplate;
                 return {};
               }
+              if (sql.startsWith('INSERT INTO daily_counts')) return {};
               throw new Error(`fakeDb: unhandled run() for: ${sql}`);
             },
           };

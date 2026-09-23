@@ -64,3 +64,19 @@ test('buildCalendar wraps events in a VCALENDAR with events missing start_at ski
   assert.match(calendarText, /END:VCALENDAR\r\n$/);
   assert.equal((calendarText.match(/BEGIN:VEVENT/g) || []).length, 1);
 });
+
+test('DESCRIPTION separates its parts with the \\n escape, not a literal backslash', () => {
+  const vevent = eventToVEvent({ id: 'e', slug: 's', title: 'T', start_at: '2026-10-03T12:00:00Z', presented_by: 'Crew', lineup: 'A\nB' }, 'cbredm.org', new Date(0));
+  const unfolded = vevent.replace(/\r\n /g, '');
+  assert.match(unfolded, /^DESCRIPTION:Crew\\nA\\, B\\nhttps:\/\/cbredm\.org\/e\/s$/m);
+});
+
+test('long lines fold at 75 octets, counting multi-byte characters', () => {
+  const title = 'Ünïcödé '.repeat(20) + '🎧'.repeat(10);
+  const vevent = eventToVEvent({ id: 'e', slug: 's', title, start_at: '2026-10-03T12:00:00Z' }, 'cbredm.org', new Date(0));
+  for (const line of vevent.split('\r\n')) {
+    assert.ok(new TextEncoder().encode(line).length <= 75, `line over 75 octets: ${line}`);
+    assert.ok(!line.includes('�'));
+  }
+  assert.ok(vevent.replace(/\r\n /g, '').includes(`SUMMARY:${title}`));
+});
