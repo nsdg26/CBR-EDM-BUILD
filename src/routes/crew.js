@@ -1,7 +1,9 @@
 import { layout } from '../templates/layout.js';
 import { crewDashboardPage } from '../templates/crew.js';
 import { hashToken } from '../lib/tokens.js';
-import { readEventFields, validateEventFields, asFormDataLike } from '../lib/eventFields.js';
+import {
+  readEventFields, validateEventFields, asFormDataLike, pickFields, locationRevealedAtFor, CREW_EDIT_FIELDS,
+} from '../lib/eventFields.js';
 import { utcToCanberraLocalInput } from '../lib/dates.js';
 import { generateId, eventSlugFor } from '../lib/ids.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
@@ -291,11 +293,13 @@ export async function handleCrewEventUpdate(request, env, id) {
     await env.DB.prepare(
       `UPDATE events SET title = ?, start_at = ?, end_at = ?, venue_name = ?, venue_address = ?, genres = ?,
          lineup = ?, lineup_equal_billing = ?, ticket_url = ?, notes = ?, age_restriction = ?, sequence = ${sequenceBump},
-         updated_at = ?, location_tba = ?, venue_lat = ?, venue_lng = ?, elevation_grid = ? WHERE id = ?`,
+         updated_at = ?, location_tba = ?, location_revealed_at = ?, venue_lat = ?, venue_lng = ?, elevation_grid = ?
+       WHERE id = ?`,
     ).bind(
       fields.title, fields.start_at, fields.end_at, fields.venue_name, fields.venue_address, fields.genres,
       fields.lineup, fields.lineup_equal_billing, fields.ticket_url, fields.notes, fields.age_restriction, now,
-      fields.location_tba, terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid, id,
+      fields.location_tba, locationRevealedAtFor(event, fields, now),
+      terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid, id,
     ).run();
 
     await sendAdminAlert(env, {
@@ -308,7 +312,7 @@ export async function handleCrewEventUpdate(request, env, id) {
 
   await env.DB.prepare(
     'INSERT INTO event_changes (id, event_id, kind, proposed_json, via, state, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-  ).bind(generateId('chg'), id, 'edit', JSON.stringify(fields), 'crew_key', 'pending', now).run();
+  ).bind(generateId('chg'), id, 'edit', JSON.stringify(pickFields(fields, CREW_EDIT_FIELDS)), 'crew_key', 'pending', now).run();
 
   await sendAdminAlert(env, {
     subject: `Crew change request: ${event.title || 'untitled'}`,

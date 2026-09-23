@@ -1,7 +1,7 @@
 import { layout } from '../templates/layout.js';
 import { editPage } from '../templates/edit.js';
 import { hashToken } from '../lib/tokens.js';
-import { readEventFields, validateEventFields } from '../lib/eventFields.js';
+import { readEventFields, validateEventFields, pickFields, EDIT_LINK_FIELDS } from '../lib/eventFields.js';
 import { generateId } from '../lib/ids.js';
 import { utcToCanberraLocalInput } from '../lib/dates.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
@@ -114,7 +114,7 @@ export async function handleEditUpdate(request, env) {
 
   await env.DB.prepare(
     'INSERT INTO event_changes (id, event_id, kind, proposed_json, via, state, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-  ).bind(generateId('chg'), event.id, 'edit', JSON.stringify(fields), 'edit_link', 'pending', now).run();
+  ).bind(generateId('chg'), event.id, 'edit', JSON.stringify(pickFields(fields, EDIT_LINK_FIELDS)), 'edit_link', 'pending', now).run();
 
   return jsonResponse({ ok: true, applied: 'pending_review' });
 }

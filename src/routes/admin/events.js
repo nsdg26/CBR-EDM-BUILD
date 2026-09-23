@@ -2,7 +2,7 @@ import { adminLayout } from '../../templates/admin/layout.js';
 import { eventListPage, eventFormPage } from '../../templates/admin/events.js';
 import { generateId, eventSlugFor } from '../../lib/ids.js';
 import { utcToCanberraLocalInput } from '../../lib/dates.js';
-import { readEventFields } from '../../lib/eventFields.js';
+import { readEventFields, locationRevealedAtFor } from '../../lib/eventFields.js';
 import { generateToken, hashToken } from '../../lib/tokens.js';
 import { notFound } from '../../lib/http.js';
 import { resolveTemplate } from '../../flyers/manifest.js';
@@ -105,25 +105,32 @@ export async function handleEventCreate(request, env, admin) {
  * POST /admin/events/:id/edit
  */
 export async function handleEventUpdate(request, env, admin, id) {
-  const event = await env.DB.prepare('SELECT venue_lat, venue_lng, elevation_grid FROM events WHERE id = ?').bind(id).first();
+  const event = await env.DB.prepare(
+    'SELECT visibility, location_tba, location_revealed_at, venue_lat, venue_lng, elevation_grid FROM events WHERE id = ?',
+  ).bind(id).first();
   if (!event) return notFound();
 
   const formData = await request.formData();
   const fields = readEventFields(formData);
   const now = new Date().toISOString();
   const terrain = await terrainFieldsFor(fields, event);
+  // SPEC.md section 5: sequence bumps on every published change, so a
+  // calendar that subscribed to the feed picks the edit up. Crew edits and
+  // approved changes already did; the admin's own edit form did not.
+  const sequenceBump = event.visibility === 'published' ? 'sequence + 1' : 'sequence';
 
   await env.DB.prepare(
     `UPDATE events SET title = ?, crew_id = ?, presented_by = ?, start_at = ?, end_at = ?, venue_name = ?,
        venue_address = ?, location_tba = ?, location_reveal_at = ?, location_how_to_find = ?, genres = ?,
        lineup = ?, lineup_equal_billing = ?, ticket_url = ?, notes = ?, age_restriction = ?, status = ?, updated_at = ?,
-       venue_lat = ?, venue_lng = ?, elevation_grid = ?
+       location_revealed_at = ?, sequence = ${sequenceBump}, venue_lat = ?, venue_lng = ?, elevation_grid = ?
      WHERE id = ?`,
   ).bind(
     fields.title, fields.crew_id, fields.presented_by, fields.start_at, fields.end_at, fields.venue_name,
     fields.venue_address, fields.location_tba, fields.location_reveal_at, fields.location_how_to_find,
     fields.genres, fields.lineup, fields.lineup_equal_billing, fields.ticket_url, fields.notes, fields.age_restriction,
-    fields.status, now, terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid, id,
+    fields.status, now, locationRevealedAtFor(event, fields, now),
+    terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid, id,
   ).run();
 
   return Response.redirect(new URL(`/admin/events/${id}/edit`, request.url), 303);

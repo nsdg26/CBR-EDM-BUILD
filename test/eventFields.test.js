@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { validateEventFields, isHttpUrl, asFormDataLike, readEventFields } from '../src/lib/eventFields.js';
+import {
+  validateEventFields, isHttpUrl, asFormDataLike, readEventFields, pickFields, locationRevealedAtFor, EDIT_LINK_FIELDS,
+} from '../src/lib/eventFields.js';
 
 test('validateEventFields rejects overly long fields', () => {
   const errors = validateEventFields({ title: 'a'.repeat(201) });
@@ -42,4 +44,39 @@ test('readEventFields leaves an explicit scheme alone, http included', () => {
 
 test('readEventFields leaves an empty ticket URL as null', () => {
   assert.equal(readEventFields(asFormDataLike({ ticket_url: '' })).ticket_url, null);
+});
+
+test('validateEventFields names the field that is too long', () => {
+  const errors = validateEventFields({ venue_name: 'a'.repeat(201) });
+  assert.deepEqual(errors, ['Venue name is too long (max 200 characters).']);
+});
+
+test('validateEventFields rejects an age restriction or status outside the CHECK constraints', () => {
+  const fields = readEventFields(asFormDataLike({ age_restriction: 'over 21', status: 'maybe' }));
+  assert.equal(validateEventFields(fields).length, 2);
+});
+
+test('pickFields keeps only the listed keys that are present', () => {
+  assert.deepEqual(pickFields({ title: 'A', status: 'on', crew_id: null }, ['title', 'notes']), { title: 'A' });
+});
+
+test('an edit link change never carries status or crew_id', () => {
+  const fields = readEventFields(asFormDataLike({ title: 'A' }));
+  const stored = pickFields(fields, EDIT_LINK_FIELDS);
+  assert.equal('status' in stored, false);
+  assert.equal('crew_id' in stored, false);
+  assert.equal(stored.title, 'A');
+});
+
+test('locationRevealedAtFor stamps a published TBA event getting a real venue', () => {
+  const now = '2026-09-23T00:00:00.000Z';
+  const existing = { visibility: 'published', location_tba: 1, location_revealed_at: null };
+  assert.equal(locationRevealedAtFor(existing, { location_tba: 0, venue_name: 'Sideway' }, now), now);
+  // Still TBA, not yet published, or no venue given: nothing to reveal.
+  assert.equal(locationRevealedAtFor(existing, { location_tba: 1, venue_name: 'Sideway' }, now), null);
+  assert.equal(locationRevealedAtFor({ ...existing, visibility: 'pending' }, { location_tba: 0, venue_name: 'Sideway' }, now), null);
+  assert.equal(locationRevealedAtFor(existing, { location_tba: 0 }, now), null);
+  // A status-only change leaves an earlier reveal alone.
+  const earlier = '2026-09-20T00:00:00.000Z';
+  assert.equal(locationRevealedAtFor({ ...existing, location_tba: 0, location_revealed_at: earlier }, { status: 'sold_out' }, now), earlier);
 });

@@ -13,6 +13,63 @@ const MAX_LENGTHS = {
   notes: 2000,
 };
 
+const FIELD_LABELS = {
+  title: 'Event name',
+  presented_by: 'Presented by',
+  venue_name: 'Venue name',
+  venue_address: 'Venue address',
+  location_reveal_at: 'When the location will be announced',
+  location_how_to_find: 'How people will find out',
+  genres: 'Genres',
+  lineup: 'Lineup',
+  ticket_url: 'Ticket URL',
+  notes: 'Notes',
+};
+
+// The events table's CHECK constraints (migrations/0001_init.sql). An
+// unlisted value used to reach the INSERT/UPDATE and fail there as a 500.
+const AGE_RESTRICTIONS = ['18+', 'all_ages', 'unknown'];
+const STATUSES = ['on', 'cancelled', 'sold_out', 'postponed'];
+
+// Columns a public edit link or a crew key can propose for review, section
+// 9.2 and 9.4. Anything readEventFields fills in that the form never sent
+// (status defaults to 'on', crew_id to null) must stay out of an
+// event_changes row: approving the change writes every key it holds, so a
+// stray default would un-cancel a cancelled event or detach it from its
+// crew.
+export const EDIT_LINK_FIELDS = [
+  'title', 'presented_by', 'start_at', 'end_at', 'venue_name', 'venue_address',
+  'location_tba', 'location_reveal_at', 'location_how_to_find', 'genres',
+  'lineup', 'lineup_equal_billing', 'ticket_url', 'notes', 'age_restriction',
+];
+export const CREW_EDIT_FIELDS = [
+  'title', 'start_at', 'end_at', 'venue_name', 'venue_address', 'location_tba',
+  'genres', 'lineup', 'lineup_equal_billing', 'ticket_url', 'notes', 'age_restriction',
+];
+
+/**
+ * @param {object} fields
+ * @param {string[]} keys
+ */
+export function pickFields(fields, keys) {
+  return Object.fromEntries(keys.filter((key) => key in fields).map((key) => [key, fields[key]]));
+}
+
+/**
+ * Section 10.2's location reveal rule: when a published event goes from
+ * TBA to a real location, stamp location_revealed_at so the card and flyer
+ * show LOCATION DROPPED for the next seven days. Returns the value to
+ * store, which is the existing one whenever this save isn't a reveal.
+ * @param {{ visibility?: string, location_tba?: number, location_revealed_at?: string|null }} existing
+ * @param {{ location_tba?: number, venue_name?: string|null, venue_address?: string|null }} fields
+ * @param {string} now
+ */
+export function locationRevealedAtFor(existing, fields, now) {
+  const revealed = existing.visibility === 'published' && existing.location_tba && 'location_tba' in fields
+    && !fields.location_tba && Boolean(fields.venue_name || fields.venue_address);
+  return revealed ? now : (existing.location_revealed_at ?? null);
+}
+
 /**
  * Input length limits and URL scheme checks, section 12. Returns a list of
  * plain-English error strings, empty if the fields are all valid.
@@ -23,8 +80,15 @@ export function validateEventFields(fields) {
 
   for (const [key, max] of Object.entries(MAX_LENGTHS)) {
     if (fields[key] && fields[key].length > max) {
-      errors.push(`That's too long (max ${max} characters).`);
+      errors.push(`${FIELD_LABELS[key]} is too long (max ${max} characters).`);
     }
+  }
+
+  if (fields.age_restriction !== undefined && !AGE_RESTRICTIONS.includes(fields.age_restriction)) {
+    errors.push('That age restriction is not one of the options.');
+  }
+  if (fields.status !== undefined && !STATUSES.includes(fields.status)) {
+    errors.push('That status is not one of the options.');
   }
 
   if (fields.ticket_url && !isHttpUrl(fields.ticket_url)) {

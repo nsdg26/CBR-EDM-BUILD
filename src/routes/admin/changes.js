@@ -2,6 +2,25 @@ import { adminLayout } from '../../templates/admin/layout.js';
 import { changeListPage } from '../../templates/admin/changes.js';
 import { notFound } from '../../lib/http.js';
 import { terrainFieldsFor } from '../../lib/geocode.js';
+import { pickFields, locationRevealedAtFor, EDIT_LINK_FIELDS, CREW_EDIT_FIELDS } from '../../lib/eventFields.js';
+
+/**
+ * The columns an approved edit may write: the same set its path lets it
+ * propose. proposed_json keys become column names in the UPDATE below, so
+ * they are whitelisted here rather than trusted. Rows queued before
+ * edit.js and crew.js stopped storing them can still carry readEventFields'
+ * defaults for fields the form never sent (crew_id: null, status: 'on',
+ * and for a crew edit presented_by: null), which would detach the event
+ * from its crew, un-cancel it and blank its presenter -- so status only
+ * counts on its own, which is the crew dashboard's "Mark cancelled/sold
+ * out/postponed" request.
+ * @param {object} proposed
+ * @param {string} via - event_changes.via
+ */
+function approvedColumns(proposed, via) {
+  if (Object.keys(proposed).length === 1 && 'status' in proposed) return pickFields(proposed, ['status']);
+  return pickFields(proposed, via === 'crew_key' ? CREW_EDIT_FIELDS : EDIT_LINK_FIELDS);
+}
 
 const LIST_SQL = `
   SELECT event_changes.*, events.title AS event_title,
@@ -30,11 +49,14 @@ export async function handleChangeList(request, env, admin) {
 export async function handleChangeApprove(request, env, admin, id) {
   const change = await env.DB.prepare('SELECT * FROM event_changes WHERE id = ?').bind(id).first();
   if (!change) return notFound();
+  // A double-submitted Approve (or a stale tab) must not apply the change a
+  // second time over whatever has been edited since.
+  if (change.state !== 'pending') return Response.redirect(new URL('/admin/changes', request.url), 303);
 
   const now = new Date().toISOString();
 
   if (change.kind === 'edit') {
-    const proposed = JSON.parse(change.proposed_json || '{}');
+    const proposed = approvedColumns(JSON.parse(change.proposed_json || '{}'), change.via);
 
     // The proposed edit's venue/location_tba fields decide real terrain
     // just like a direct save does (owner request: always fetch real
@@ -42,10 +64,11 @@ export async function handleChangeApprove(request, env, admin, id) {
     // changes on the live event, so it's fetched here too, not only on
     // handleEventCreate/handleEventUpdate's direct-write paths.
     const existing = await env.DB.prepare(
-      'SELECT venue_lat, venue_lng, elevation_grid FROM events WHERE id = ?',
+      'SELECT visibility, location_tba, location_revealed_at, venue_lat, venue_lng, elevation_grid FROM events WHERE id = ?',
     ).bind(change.event_id).first();
-    const terrain = await terrainFieldsFor(proposed, existing || {});
-    Object.assign(proposed, terrain);
+    if (!existing) return notFound();
+    const terrain = await terrainFieldsFor(proposed, existing);
+    Object.assign(proposed, terrain, { location_revealed_at: locationRevealedAtFor(existing, proposed, now) });
 
     const setClauses = Object.keys(proposed).map((field) => `${field} = ?`);
     const values = Object.values(proposed);
