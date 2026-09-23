@@ -10,24 +10,33 @@ const MONTHS_SHORT = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
+// Built once per isolate rather than on every call: constructing an
+// Intl.DateTimeFormat is far more expensive than using one, and a single
+// board render formats dates for every card on it.
+const PARTS_FORMATTER = new Intl.DateTimeFormat('en-AU', {
+  timeZone: TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  weekday: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+const OFFSET_FORMATTER = new Intl.DateTimeFormat('en-AU', {
+  timeZone: TIME_ZONE,
+  timeZoneName: 'shortOffset',
+});
+
 /**
  * Breaks a UTC ISO string into its Canberra local calendar and time parts.
  * @param {string} isoUtc
  */
 function toCanberraParts(isoUtc) {
   const date = new Date(isoUtc);
-  const formatter = new Intl.DateTimeFormat('en-AU', {
-    timeZone: TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  });
   const parts = Object.fromEntries(
-    formatter.formatToParts(date).map((part) => [part.type, part.value]),
+    PARTS_FORMATTER.formatToParts(date).map((part) => [part.type, part.value]),
   );
   return {
     year: Number(parts.year),
@@ -108,22 +117,32 @@ export function isEventPast(event, now = new Date()) {
 }
 
 /**
- * Converts a Date holding Canberra "wall clock" fields (as if they were UTC)
- * into the real UTC instant, by measuring and correcting for the zone offset.
- * @param {Date} wallClockAsUtc
+ * Canberra's UTC offset in milliseconds at a real instant.
+ * @param {Date} instant
  */
-function canberraLocalToUtc(wallClockAsUtc) {
-  const offsetFormatter = new Intl.DateTimeFormat('en-AU', {
-    timeZone: TIME_ZONE,
-    timeZoneName: 'shortOffset',
-  });
-  const offsetPart = offsetFormatter.formatToParts(wallClockAsUtc)
+function canberraOffsetMsAt(instant) {
+  const offsetPart = OFFSET_FORMATTER.formatToParts(instant)
     .find((part) => part.type === 'timeZoneName').value;
   const match = offsetPart.match(/GMT([+-]\d+)(?::(\d+))?/);
   const offsetHours = match ? Number(match[1]) : 10;
   const offsetMinutes = match && match[2] ? Number(match[2]) : 0;
-  const offsetMs = (offsetHours * 60 + Math.sign(offsetHours) * offsetMinutes) * 60 * 1000;
-  return new Date(wallClockAsUtc.getTime() - offsetMs);
+  return (offsetHours * 60 + Math.sign(offsetHours) * offsetMinutes) * 60 * 1000;
+}
+
+/**
+ * Converts a Date holding Canberra "wall clock" fields (as if they were UTC)
+ * into the real UTC instant, by measuring and correcting for the zone offset.
+ *
+ * Two passes: the offset has to be measured at the real instant, not at the
+ * wall-clock-as-UTC one, which sits 10-11 hours later. Measuring it once at
+ * the wrong instant (as this used to) put every time from about 4pm Saturday
+ * to 2am Sunday on a daylight saving changeover weekend an hour out -- a
+ * 10pm Saturday event on the first weekend of October was saved as 9pm.
+ * @param {Date} wallClockAsUtc
+ */
+function canberraLocalToUtc(wallClockAsUtc) {
+  const guess = new Date(wallClockAsUtc.getTime() - canberraOffsetMsAt(wallClockAsUtc));
+  return new Date(wallClockAsUtc.getTime() - canberraOffsetMsAt(guess));
 }
 
 /**
@@ -208,6 +227,10 @@ export function canberraLocalInputToUtc(localDateTimeString) {
   const [year, month, day] = datePart.split('-').map(Number);
   const [hour, minute] = (timePart || '00:00').split(':').map(Number);
   const wallClockAsUtc = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  // A malformed value (only reachable from a hand-built request, since the
+  // forms use datetime-local inputs) reads as no date rather than throwing
+  // a RangeError out of every route that saves an event.
+  if (Number.isNaN(wallClockAsUtc.getTime())) return null;
   return canberraLocalToUtc(wallClockAsUtc).toISOString();
 }
 

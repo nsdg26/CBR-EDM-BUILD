@@ -64,3 +64,19 @@ test('an end time overrides the 6am rule', () => {
   assert.equal(isEventPast(event, new Date('2026-03-14T16:59:00Z')), false);
   assert.equal(isEventPast(event, new Date('2026-03-14T17:01:00Z')), true);
 });
+
+test('canberraLocalInputToUtc is right on the evening before daylight saving starts', () => {
+  // DST starts 2am Sun 4 Oct 2026. Saturday night is still AEST (+10);
+  // the offset used to be measured ten hours too late and came out +11.
+  assert.equal(canberraLocalInputToUtc('2026-10-03T22:00'), '2026-10-03T12:00:00.000Z');
+  assert.equal(canberraLocalInputToUtc('2026-10-04T01:30'), '2026-10-03T15:30:00.000Z');
+});
+
+test('canberraLocalInputToUtc is right on the evening before daylight saving ends', () => {
+  // DST ends 3am Sun 5 Apr 2026. Saturday night is still AEDT (+11).
+  assert.equal(canberraLocalInputToUtc('2026-04-04T22:00'), '2026-04-04T11:00:00.000Z');
+});
+
+test('canberraLocalInputToUtc returns null for a malformed value instead of throwing', () => {
+  assert.equal(canberraLocalInputToUtc('garbage'), null);
+});
