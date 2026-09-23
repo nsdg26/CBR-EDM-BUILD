@@ -6,6 +6,11 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Event names missing from the generated flyer (owner report, seen live)
+  for any event without a lineup. The contour template skipped the title
+  when it matched the headliner, and with no lineup the headliner falls
+  back to the title itself, so the name was skipped with nothing drawn in
+  its place. The title now only gives way to an act of the same name.
 - Links inside a paper notice were invisible -- the same trap `.scrap a`
   already fixed for cards. The global `a { color: var(--paper) }` is for
   the dark wall, so on `.error`'s own paper background a link came out
@@ -578,6 +583,14 @@ after deployment.
 Every visual change to the generated flyer engine, in order. See
 `FLYER_ENGINE_VERSION` in `src/flyers/index.js`.
 
+- **0.12.3** - `contour` draws the event's name on a flyer with no
+  lineup again (owner report, seen live). The title was skipped whenever
+  it matched `event.headliner`, but normalise.js falls back to the title
+  as the headliner when there are no acts, so a lineup-less event skipped
+  its name and then had no acts to draw either, leaving the flyer with no
+  name at all. The title is now skipped only when an act on the flyer
+  already carries the same name. Also covers the long-title wrapping
+  from the Fixed entry above, which changed output without a bump.
 - **0.12.2** - `contour`'s headliner size dropped from 56px to 50px,
   owner request, widening the gap under the event name (66px).
 - **0.12.1** - `contour`'s event name bumped from 60px to 66px, owner

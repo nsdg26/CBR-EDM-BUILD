@@ -380,3 +380,17 @@ test('contour centres the date on the same line as doors/close and 18+, not as i
 
   assert.equal(dateMatch[1], ageMatch[1], 'date is not on the same line (y) as the 18+ label');
 });
+
+test('contour draws the event name on a flyer with no lineup', () => {
+  // Regression: normalise.js falls back to the title as the headliner when
+  // there are no acts, and contour used to skip the title whenever it
+  // matched the headliner, so a lineup-less event rendered with no name.
+  const result = render({ ...FIXTURES.minimal, flyer_template: 'contour' }, { now: FIXTURE_NOW });
+  assert.match(result.svg, />UNTITLED NIGHT<\/text>/);
+});
+
+test('contour does not print the title twice when it is also an act name', () => {
+  const event = { ...FIXTURES.full, title: 'Deep Signal', crew_name: null, flyer_template: 'contour' };
+  const result = render(event, { now: FIXTURE_NOW });
+  assert.equal(result.svg.match(/>DEEP SIGNAL<\/text>/g).length, 1);
+});

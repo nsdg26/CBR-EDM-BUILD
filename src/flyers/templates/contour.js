@@ -321,15 +321,21 @@ function buildActsBlock(ctx, event) {
 
   // Owner ask: contour never showed the event's own title or its crew/
   // presenter name -- only ever event.headliner (the lineup's first
-  // act). Skipped when it would just repeat the headliner (no lineup:
-  // normalise.js falls back to event.title as the headliner itself).
+  // act). Skipped only when an act drawn below already carries the same
+  // name, so the flyer doesn't print it twice. This used to compare
+  // against event.headliner instead, which normalise.js falls back to
+  // event.title for an event with no lineup -- so a lineup-less event
+  // skipped its title and then had no acts to draw either, leaving the
+  // flyer with no name on it at all (owner report, seen live).
   // Explicit four-tier size hierarchy (owner request, 2026-09-20): the
   // event's own name reads as the single biggest line on its own flyer,
   // just ahead of a headliner act; the presenter line reads just ahead
   // of a support act's name, rather than sharing one "small" size with
   // it as before.
   let hasSmallLines = false;
-  if (event.title && event.title.toUpperCase() !== (event.headliner || '').toUpperCase()) {
+  const titleRepeatsAnAct = Boolean(event.title)
+    && event.acts.some((act) => act.name.toUpperCase() === event.title.toUpperCase());
+  if (event.title && !titleRepeatsAnAct) {
     // This was drawn at a flat EVENT_TITLE_SIZE with no width check at
     // all, unlike every other block here, so a long name simply ran off
     // both edges of the canvas -- owner report, "Golden Days Music &
