@@ -289,7 +289,17 @@ export async function handleCrewEventUpdate(request, env, id) {
   const event = await ownedEvent(env, crew, id);
   if (!event) return jsonResponse({ ok: false, error: 'Event not found.' }, 404);
 
-  const fields = readEventFields(asFormDataLike(body));
+  // The dashboard's edit form has no age restriction, Location TBA or
+  // equal billing inputs, so those never arrive in the body and
+  // readEventFields would read them as 'unknown', 0 and 0: every crew edit
+  // quietly dropped an 18+ flag and un-TBA'd a secret location. Anything
+  // the body leaves out keeps the event's current value.
+  const fields = readEventFields(asFormDataLike({
+    age_restriction: event.age_restriction,
+    location_tba: event.location_tba ? '1' : '',
+    lineup_equal_billing: event.lineup_equal_billing ? '1' : '',
+    ...body,
+  }));
   const errors = validateEventFields(fields);
   if (errors.length) return jsonResponse({ ok: false, error: errors[0] }, 400);
 
