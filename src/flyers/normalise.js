@@ -127,20 +127,29 @@ export function normaliseEvent(event, options = {}) {
 }
 
 /**
- * A short, stable hash of only the fields the flyer engine actually reads,
- * for the cache key (section 4.2): editing a field the flyer doesn't
- * render must not bust the cache.
+ * Every field the flyer engine actually reads, joined into one string:
+ * the exact input behind flyerDataHash, and the render memo's key in
+ * index.js (exact, so two versions of an event can never share an entry).
  * @param {object} event
  */
-export function flyerDataHash(event) {
-  const relevant = [
+export function flyerDataKey(event) {
+  return [
     event.title, event.presented_by, event.lineup, event.lineup_equal_billing, event.start_at, event.end_at,
     event.venue_name, event.location_tba, event.location_reveal_at, event.location_how_to_find,
     event.genres, event.age_restriction, event.status,
     event.location_revealed_at, event.crew_name, event.flyer_template, event.seed_salt,
     event.elevation_grid,
   ].map((v) => (v === null || v === undefined ? '' : String(v))).join('|');
+}
 
+/**
+ * A short, stable hash of only the fields the flyer engine actually reads,
+ * for the cache key (section 4.2): editing a field the flyer doesn't
+ * render must not bust the cache.
+ * @param {object} event
+ */
+export function flyerDataHash(event) {
+  const relevant = flyerDataKey(event);
   let hash = 0x811c9dc5;
   for (let i = 0; i < relevant.length; i++) {
     hash ^= relevant.charCodeAt(i);

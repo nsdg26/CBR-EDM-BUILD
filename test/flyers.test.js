@@ -394,3 +394,18 @@ test('contour does not print the title twice when it is also an act name', () =>
   const result = render(event, { now: FIXTURE_NOW });
   assert.equal(result.svg.match(/>DEEP SIGNAL<\/text>/g).length, 1);
 });
+
+test('the render memo never serves a stale flyer', () => {
+  const before = render(FIXTURES.full, { now: FIXTURE_NOW });
+  // Same inputs: the same result, straight from the memo.
+  assert.equal(render(FIXTURES.full, { now: FIXTURE_NOW }), before);
+  // An edit to a field the flyer draws is a different render.
+  const edited = render({ ...FIXTURES.full, title: 'Something Else' }, { now: FIXTURE_NOW });
+  assert.ok(edited.svg.includes('SOMETHING ELSE'));
+  // So is the event going past (faded palette and extra grain), with the
+  // data untouched.
+  const afterEnd = new Date(new Date(FIXTURES.full.end_at).getTime() + 60 * 60 * 1000);
+  assert.notEqual(render(FIXTURES.full, { now: afterEnd }).svg, before.svg);
+  // And another surface.
+  assert.notEqual(render(FIXTURES.full, { surface: 'scrap', now: FIXTURE_NOW }).svg, before.svg);
+});

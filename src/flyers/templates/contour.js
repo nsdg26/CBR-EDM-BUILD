@@ -107,6 +107,19 @@ function upsampleGrid(grid, factor) {
   return { size: newSize, values: newValues };
 }
 
+// Marching squares' case table: which cell edges each corner pattern's
+// line(s) run between. Built once rather than per cell.
+const MARCHING_SQUARES_CASES = {
+  1: [['left', 'bottom']], 14: [['left', 'bottom']],
+  2: [['bottom', 'right']], 13: [['bottom', 'right']],
+  3: [['left', 'right']], 12: [['left', 'right']],
+  4: [['top', 'right']], 11: [['top', 'right']],
+  6: [['top', 'bottom']], 9: [['top', 'bottom']],
+  7: [['left', 'top']], 8: [['left', 'top']],
+  5: [['left', 'top'], ['bottom', 'right']],
+  10: [['top', 'right'], ['left', 'bottom']],
+};
+
 /**
  * One iso-elevation level's line segments through a scalar grid
  * (marching squares, the standard case table). Segments are left
@@ -120,37 +133,29 @@ function upsampleGrid(grid, factor) {
  */
 function marchingSquaresSegments(grid, threshold, toScreen, budget) {
   const { size, values } = grid;
-  const at = (r, c) => values[r * size + c];
   const lerp = (a, b) => (b === a ? 0.5 : (threshold - a) / (b - a));
   const segments = [];
 
   outer: for (let r = 0; r < size - 1; r++) {
     for (let c = 0; c < size - 1; c++) {
-      const tl = at(r, c);
-      const tr = at(r, c + 1);
-      const bl = at(r + 1, c);
-      const br = at(r + 1, c + 1);
+      const tl = values[r * size + c];
+      const tr = values[r * size + c + 1];
+      const bl = values[(r + 1) * size + c];
+      const br = values[(r + 1) * size + c + 1];
       const caseIndex = (tl >= threshold ? 8 : 0) | (tr >= threshold ? 4 : 0)
         | (br >= threshold ? 2 : 0) | (bl >= threshold ? 1 : 0);
       if (caseIndex === 0 || caseIndex === 15) continue;
 
-      const top = toScreen({ r, c: c + lerp(tl, tr) });
-      const bottom = toScreen({ r: r + 1, c: c + lerp(bl, br) });
-      const left = toScreen({ r: r + lerp(tl, bl), c });
-      const right = toScreen({ r: r + lerp(tr, br), c: c + 1 });
-
-      const cases = {
-        1: [[left, bottom]], 14: [[left, bottom]],
-        2: [[bottom, right]], 13: [[bottom, right]],
-        3: [[left, right]], 12: [[left, right]],
-        4: [[top, right]], 11: [[top, right]],
-        6: [[top, bottom]], 9: [[top, bottom]],
-        7: [[left, top]], 8: [[left, top]],
-        5: [[left, top], [bottom, right]],
-        10: [[top, right], [left, bottom]],
+      // Only the edges this case actually crosses get projected, rather
+      // than all four for every crossed cell.
+      const edge = {
+        top: () => toScreen({ r, c: c + lerp(tl, tr) }),
+        bottom: () => toScreen({ r: r + 1, c: c + lerp(bl, br) }),
+        left: () => toScreen({ r: r + lerp(tl, bl), c }),
+        right: () => toScreen({ r: r + lerp(tr, br), c: c + 1 }),
       };
-      for (const [a, b] of cases[caseIndex] || []) {
-        segments.push([a, b]);
+      for (const [a, b] of MARCHING_SQUARES_CASES[caseIndex]) {
+        segments.push([edge[a](), edge[b]()]);
         if (segments.length >= budget) break outer;
       }
     }

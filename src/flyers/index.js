@@ -7,7 +7,7 @@
 import { rngFor } from './seed.js';
 import { paletteFor } from './palette.js';
 import { gridFor } from './layout.js';
-import { normaliseEvent, flyerDataHash } from './normalise.js';
+import { normaliseEvent, flyerDataHash, flyerDataKey } from './normalise.js';
 import { resolveTemplate } from './manifest.js';
 import { stampTextFor, stamp } from './parts/stamp.js';
 import { grain } from './parts/grain.js';
@@ -112,6 +112,34 @@ function renderWithTemplate(template, ctx) {
   return svg;
 }
 
+// Renders are deterministic (section 3), so a warm isolate can hand back a
+// flyer it has already drawn instead of drawing it again on every board,
+// archive and event page load -- the board renders one per card. Keyed on
+// everything the output depends on: the exact flyer fields (not their
+// 32-bit hash, so no two versions of an event can collide), surface,
+// engine version, and the two things that change with the clock (past, and
+// the status, which covers the seven-day LOCATION DROPPED window).
+// Oldest-first eviction via Map insertion order keeps it bounded. One
+// memo per template object, so a render is only ever reused by the exact
+// template code that drew it.
+const MEMO_LIMIT = 200;
+const memos = new WeakMap();
+
+function memoFor(template) {
+  let memo = memos.get(template);
+  if (!memo) {
+    memo = new Map();
+    memos.set(template, memo);
+  }
+  return memo;
+}
+
+function memoKeyFor(rawEvent, event, surface, now) {
+  return [
+    FLYER_ENGINE_VERSION, rawEvent.id, surface, event.status, isEventPast(rawEvent, now), flyerDataKey(rawEvent),
+  ].join('\u0000');
+}
+
 /**
  * @param {object} rawEvent - a row from `events`, ideally joined with crews.name AS crew_name
  * @param {{ surface?: 'scrap'|'page'|'social'|'print', now?: Date }} [options]
@@ -124,9 +152,17 @@ export function render(rawEvent, options = {}) {
   const template = resolveTemplate(event, rawEvent.flyer_template);
   const dataHash = flyerDataHash(rawEvent);
 
+  const memo = memoFor(template);
+  const key = memoKeyFor(rawEvent, event, surface, now);
+  const cached = memo.get(key);
+  if (cached) return cached;
+
   try {
     const svg = renderWithTemplate(template, buildCtx(event, rawEvent, surface, now));
-    return { svg, templateId: template.id, dataHash };
+    const result = { svg, templateId: template.id, dataHash };
+    if (memo.size >= MEMO_LIMIT) memo.delete(memo.keys().next().value);
+    memo.set(key, result);
+    return result;
   } catch (err) {
     console.error(`Flyer render failed for event ${rawEvent.id} (template ${template.id})`, err);
     return null; // contour is itself the only template; nothing left to fall back to
