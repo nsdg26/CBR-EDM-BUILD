@@ -3,9 +3,15 @@ import qrcode from '../vendor/qrcode.mjs';
 import { config } from '../config.js';
 import { recordQrSvg } from '../lib/recordQr.js';
 
+// Everything prints on A4 (owner request): an A4 poster fills the page,
+// and A6 is four copies to a sheet, 2 x 2 with cut lines, so one sheet of
+// ordinary paper makes four small flyers. A6 is exactly a quarter of A4,
+// so each copy gets a 105 x 148.5mm cell with nothing wasted.
+const PAGE = { widthMm: 210, heightMm: 297 };
+
 const SIZES = {
-  a4: { label: 'A4', widthMm: 210, heightMm: 297 },
-  a6: { label: 'A6', widthMm: 105, heightMm: 148 },
+  a4: { label: 'A4', widthMm: 210, heightMm: 297, copies: 1 },
+  a6: { label: 'A6', widthMm: 105, heightMm: 148, copies: 4 },
 };
 
 // The sheet's own two colours, also passed to the record drawing so it
@@ -13,6 +19,14 @@ const SIZES = {
 const PAPER = '#d9d8d2';
 const TONER = '#141312';
 const GROOVE = '#63615a';
+
+// Open scissors, blades pointing right along the cut, drawn rather than
+// the U+2702 character so they print the same whatever fonts the printer's
+// machine has. currentColor, so .cut svg sets the ink.
+const SCISSORS = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+  + '<g fill="none" stroke="currentColor" stroke-width="1.6">'
+  + '<circle cx="5" cy="7" r="3"/><circle cx="5" cy="17" r="3"/>'
+  + '<path d="M7.6 8.6 21 17M7.6 15.4 21 7"/></g></svg>';
 
 const STYLES = {
   record: { label: 'Record' },
@@ -36,6 +50,7 @@ const STYLES = {
  */
 export function posterPage(homeUrl, size, style = 'record') {
   const dimensions = SIZES[size] || SIZES.a4;
+  const fourUp = dimensions.copies === 4;
   const otherSize = size === 'a6' ? 'a4' : 'a6';
   const artwork = STYLES[style] ? style : 'record';
   const otherStyle = artwork === 'record' ? 'plain' : 'record';
@@ -66,6 +81,8 @@ export function posterPage(homeUrl, size, style = 'record') {
     : qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true })
       .replace('fill="white"', `fill="${PAPER}"`)
       .replace('fill="black"', `fill="${TONER}"`);
+
+  const displayUrl = homeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return html`<!doctype html>
 <html lang="en-AU">
@@ -113,13 +130,31 @@ export function posterPage(homeUrl, size, style = 'record') {
       cursor: pointer;
     }
 
+    /* The printed page, always A4. */
     .sheet {
+      position: relative;
       background: #d9d8d2;
       color: #141312;
-      width: ${dimensions.widthMm}mm;
-      height: ${dimensions.heightMm}mm;
+      width: ${PAGE.widthMm}mm;
+      height: ${PAGE.heightMm}mm;
       margin: 0 auto;
-      padding: 12mm;
+      display: grid;
+      /* minmax(0, ...) holds every cell to exactly its share of the page:
+         a plain 1fr row grows to fit its content, and a copy a millimetre
+         taller than its cell pushed the sheet onto a second page. */
+      grid-template-columns: repeat(${fourUp ? 2 : 1}, minmax(0, 1fr));
+      grid-template-rows: repeat(${fourUp ? 2 : 1}, minmax(0, 1fr));
+    }
+
+    /* One copy of the poster: the whole page for A4, a quarter of it for
+       A6. Everything inside is sized off the copy, not the page. */
+    .poster {
+      min-width: 0;
+      min-height: 0;
+      /* 10mm on the four-up sheet: the record copy measures about 149mm
+         with 12mm of padding, over its 148.5mm cell, and once cut apart
+         each flyer still has a clear border. */
+      padding: ${fourUp ? 10 : 12}mm;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -128,7 +163,50 @@ export function posterPage(homeUrl, size, style = 'record') {
       gap: ${mm(8)};
     }
 
-    .sheet h1 {
+    /* The A6 sheet's cut lines: one down the middle, one across, over the
+       copies, with a pair of scissors on each. Dashed in the record's
+       groove grey so they read as guides rather than part of the poster,
+       and the scissors sit 6mm in from the edge, inside the strip most
+       home printers can't print. */
+    .cut {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .cut--down {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      border-left: 0.3mm dashed ${GROOVE};
+    }
+
+    .cut--across {
+      left: 0;
+      right: 0;
+      top: 50%;
+      border-top: 0.3mm dashed ${GROOVE};
+    }
+
+    .cut svg {
+      position: absolute;
+      width: 6mm;
+      height: 6mm;
+      color: ${GROOVE};
+      background: #d9d8d2;
+    }
+
+    .cut--down svg {
+      top: 6mm;
+      left: -3.15mm;
+      transform: rotate(90deg);
+    }
+
+    .cut--across svg {
+      left: 6mm;
+      top: -3.15mm;
+    }
+
+    .poster h1 {
       font-family: 'Big Shoulders Display', sans-serif;
       font-weight: 900;
       text-transform: uppercase;
@@ -137,14 +215,14 @@ export function posterPage(homeUrl, size, style = 'record') {
       margin: 0;
     }
 
-    .sheet p {
+    .poster p {
       font-size: ${mm(4)};
       line-height: 1.3;
       margin: 0;
       max-width: 42ch;
     }
 
-    .sheet svg {
+    .poster svg {
       width: ${mm(artwork === 'record' ? 76 : 45)};
       height: ${mm(artwork === 'record' ? 76 : 45)};
     }
@@ -183,11 +261,9 @@ export function posterPage(homeUrl, size, style = 'record') {
     }
 
     @media print {
-      /* In millimetres, not the "A4"/"A6" keywords this used to print:
-         Chrome doesn't know A6 as a page size, dropped the whole rule and
-         fell back to the printer's default paper, so an A6 poster came out
-         as a small sheet in the corner of a full US Letter or A4 page. */
-      @page { size: ${dimensions.widthMm}mm ${dimensions.heightMm}mm; margin: 0; }
+      /* A4 for both sizes, in millimetres rather than the "A4" keyword so
+         it's stated the same way as the sheet it matches. */
+      @page { size: ${PAGE.widthMm}mm ${PAGE.heightMm}mm; margin: 0; }
       body { background: none; }
       .screen-only { display: none; }
       .sheet { margin: 0; }
@@ -201,16 +277,19 @@ export function posterPage(homeUrl, size, style = 'record') {
 </head>
 <body>
   <div class="screen-only">
-    <p>Print size: ${dimensions.label}. <a href="/poster?size=${otherSize}&amp;style=${artwork}">Switch to ${SIZES[otherSize].label}</a></p>
+    <p>Print size: ${fourUp ? 'A6, four to a sheet of A4 with cut lines' : 'A4'}. <a href="/poster?size=${otherSize}&amp;style=${artwork}">Switch to ${otherSize === 'a6' ? 'A6 (four per A4 sheet)' : 'A4'}</a></p>
     <p>Artwork: ${STYLES[artwork].label}. <a href="/poster?size=${size}&amp;style=${otherStyle}">Switch to ${STYLES[otherStyle].label}</a></p>
     <button type="button" data-print-button>Print</button>
   </div>
   <div class="sheet-scaler">
     <div class="sheet">
-      <h1>${config.siteName}</h1>
-      <p>${config.slogan}</p>
-      ${raw(qrSvg)}
-      <p>${homeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</p>
+      ${Array.from({ length: dimensions.copies }, (_, i) => html`<div class="poster"${i ? raw(' aria-hidden="true"') : ''}>
+        <h1>${config.siteName}</h1>
+        <p>${config.slogan}</p>
+        ${raw(qrSvg)}
+        <p>${displayUrl}</p>
+      </div>`)}
+      ${fourUp ? raw(`<div class="cut cut--down" aria-hidden="true">${SCISSORS}</div><div class="cut cut--across" aria-hidden="true">${SCISSORS}</div>`) : ''}
     </div>
   </div>
   <script src="/js/poster-scale.js" defer></script>

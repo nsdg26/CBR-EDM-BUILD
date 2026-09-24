@@ -13,8 +13,7 @@ All notable changes to this project are documented here. Format follows
 - The A6 printable poster printed on the printer's default paper (US
   Letter or A4) with the A6 sheet in one corner. Its page rule said
   `size: A6`, which Chrome doesn't recognise, so the rule was dropped.
-  Both sizes now give the page in millimetres, and print to exactly
-  105 x 148mm and 210 x 297mm.
+  Page sizes are now given in millimetres.
 - The record-style poster's QR showed faint hairline seams between its
   modules on screen and in PDF viewers, a grid through the code. The
   modules are now one shape, so touching modules merge. The plain-style
@@ -202,6 +201,14 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Added
+- The A6 poster prints four to a sheet of A4, owner request, so one
+  sheet of ordinary paper makes four small flyers: a 2 x 2 grid of
+  copies, each exactly an A6 quarter (105 x 148.5mm), with dashed cut
+  lines through the middle and a pair of scissors on each line. Rows are
+  held to exactly half the page, and the padding inside each copy is
+  10mm, since the record copy was a millimetre taller than its cell at
+  12mm and pushed the sheet onto a second page. The A4 poster is
+  unchanged: one to a page.
 - The home page suggests installing the site, owner request, from the
   first visit. On Chrome, Edge and Samsung Internet (Android and
   desktop) a taped paper notice offers Install, which opens the

@@ -17,13 +17,19 @@ test('posterPage embeds a real SVG QR code pointing at the home URL', () => {
   assert.match(plain, /example\.com/);
 });
 
-test('posterPage sizes the sheet and @page rule for A6', () => {
+test('A6 prints four copies to an A4 sheet, with cut lines', () => {
   const page = String(posterPage('https://example.com/', 'a6'));
-  assert.match(page, /width: 105mm/);
-  assert.match(page, /height: 148mm/);
-  // In millimetres: Chrome doesn't know the A6 keyword, and dropped the
-  // rule for the printer's default paper.
-  assert.match(page, /@page \{ size: 105mm 148mm; margin: 0; \}/);
+  // The page is A4 (in mm: Chrome doesn't know the A6 keyword, and the
+  // old A6 page rule was dropped for the printer's default paper).
+  assert.match(page, /@page \{ size: 210mm 297mm; margin: 0; \}/);
+  assert.match(page, /width: 210mm/);
+  assert.match(page, /height: 297mm/);
+  assert.match(page, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.equal((page.match(/<div class="poster"/g) || []).length, 4);
+  // One copy for screen readers, not four.
+  assert.equal((page.match(/<div class="poster" aria-hidden="true">/g) || []).length, 3);
+  assert.match(page, /class="cut cut--down"/);
+  assert.match(page, /class="cut cut--across"/);
 });
 
 test('posterPage sizes the sheet and @page rule for A4', () => {
@@ -31,6 +37,8 @@ test('posterPage sizes the sheet and @page rule for A4', () => {
   assert.match(page, /width: 210mm/);
   assert.match(page, /height: 297mm/);
   assert.match(page, /@page \{ size: 210mm 297mm; margin: 0; \}/);
+  assert.equal((page.match(/<div class="poster"/g) || []).length, 1);
+  assert.doesNotMatch(page, /class="cut /);
 });
 
 test('posterPage defaults to the record artwork and can switch to plain', () => {
