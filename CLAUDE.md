@@ -31,3 +31,13 @@ into `nic-st/cbrdance`'s `main` and push it. It also fixes the common
 failure mode where that folder's `origin` remote got pointed at the
 `nsdg26` repo instead of `nic-st/cbrdance` (which is what makes GitHub
 Desktop conflate the two folders and refuse to push).
+
+# Domains
+
+**cbrdance.org is the primary domain, always** (owner decision). The same
+Worker also answers on cbredm.org, but anything that behaves differently
+between the two is judged on cbrdance.org: check live behaviour there
+first, and treat a fix that only works on cbredm.org as not done. Both
+domains share one Cloudflare Access application (the same ACCESS_AUD), so
+admin sign-in is the same on each; they are still separate origins to a
+browser, with separate storage, installed apps and service workers.
