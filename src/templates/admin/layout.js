@@ -37,9 +37,11 @@ function isAdminNavCurrent(href, path) {
  * the colours or the form and lineup-row styling to drift out of step.
  * Still no-store, still no public-site scripts it has no use for. It is
  * installable as its own app, with its own manifest and icon.
- * @param {{ title: string, bodyContent: string, email: string, path?: string, now?: Date }} options
+ * @param {{ title: string, bodyContent: string, email: string, path?: string, siteOrigin?: string, now?: Date }} options
+ *   siteOrigin - the public site, for "View the site" when the admin is on
+ *   its own hostname (see lib/hosts.js)
  */
-export function adminLayout({ title, bodyContent, email, path = '', now = new Date() }) {
+export function adminLayout({ title, bodyContent, email, path = '', siteOrigin = '', now = new Date() }) {
   // Date and copy both come from config.reminderBanner (config.js), which
   // used to declare them while this file hardcoded its own copy of each --
   // so editing the config did nothing.
@@ -81,7 +83,7 @@ export function adminLayout({ title, bodyContent, email, path = '', now = new Da
       <nav aria-label="Admin">
         <ul class="site-nav">
           ${NAV.map(([href, label]) => html`<li><a href="${href}"${isAdminNavCurrent(href, path) ? raw(' aria-current="page"') : ''}>${label}</a></li>`)}
-          <li><a href="/" class="admin-nav-site">View the site</a></li>
+          <li><a href="${siteOrigin}/" class="admin-nav-site">View the site</a></li>
         </ul>
       </nav>
       <p class="admin-signed-in">Signed in as ${email}</p>

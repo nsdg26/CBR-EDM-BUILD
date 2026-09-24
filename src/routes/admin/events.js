@@ -10,7 +10,7 @@ import { normaliseEvent } from '../../flyers/normalise.js';
 import { terrainFieldsFor } from '../../lib/geocode.js';
 
 function page(admin, title, body) {
-  return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email, path: admin.path })), {
+  return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email, path: admin.path, siteOrigin: admin.siteOrigin })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }
@@ -232,7 +232,7 @@ export async function handleEventReissueEditLink(request, env, admin, id) {
     .bind(tokenHash, new Date().toISOString(), id).run();
 
   const crews = await getCrews(env);
-  const body = eventFormPage({ ...eventForForm(event), edit_token_hash: tokenHash, newEditLink: `${new URL(request.url).origin}/edit#${token}` }, crews);
+  const body = eventFormPage({ ...eventForForm(event), edit_token_hash: tokenHash, newEditLink: `${admin.siteOrigin}/edit#${token}` }, crews);
   return page(admin, `Edit: ${event.title || 'Untitled'}`, body);
 }
 

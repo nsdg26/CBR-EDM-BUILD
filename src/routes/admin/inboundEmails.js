@@ -4,7 +4,7 @@ import { generateId, eventSlugFor } from '../../lib/ids.js';
 import { notFound } from '../../lib/http.js';
 
 function page(admin, title, body) {
-  return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email, path: admin.path })), {
+  return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email, path: admin.path, siteOrigin: admin.siteOrigin })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

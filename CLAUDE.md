@@ -41,3 +41,10 @@ first, and treat a fix that only works on cbredm.org as not done. Both
 domains share one Cloudflare Access application (the same ACCESS_AUD), so
 admin sign-in is the same on each; they are still separate origins to a
 browser, with separate storage, installed apps and service workers.
+
+The admin panel can also live on its own hostname, **admin.cbrdance.org**
+(`src/lib/hosts.js`, README step 14), so the admin app and the public app
+can both be installed on one phone. Any `admin.` hostname serves the admin
+as soon as it reaches the Worker; `vars.ADMIN_HOST` (empty = off) is the
+separate switch that redirects `/admin` on the other domains there. Until
+the owner sets that, `/admin` must keep working on cbrdance.org itself.

@@ -201,6 +201,16 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Added
+- The admin panel can live on its own address, `admin.cbrdance.org`,
+  owner request. On one domain, the public app's scope contains `/admin`,
+  and Android Chrome won't offer to install the admin app while the public
+  one is installed (seen on cbrdance.org, where the public app was
+  installed, while cbredm.org worked). A separate hostname is a separate
+  origin, so both apps install. Dormant until set up: any `admin.`
+  hostname serves the admin, and nothing points one at the Worker yet;
+  `vars.ADMIN_HOST`, empty by default, is the separate switch that later
+  redirects `/admin` on the other domains there (GET only, 302). Setup
+  steps are in README step 14.
 - The A6 poster prints four to a sheet of A4, owner request, so one
   sheet of ordinary paper makes four small flyers: a 2 x 2 grid of
   copies, each exactly an A6 quarter (105 x 148.5mm), with dashed cut

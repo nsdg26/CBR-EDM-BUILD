@@ -41,7 +41,7 @@ const LIST_SQL = `
 export async function handleChangeList(request, env, admin) {
   const { results } = await env.DB.prepare(LIST_SQL).all();
   const body = changeListPage(results);
-  return new Response(String(adminLayout({ title: 'Pending changes', bodyContent: body, email: admin.email, path: admin.path })), {
+  return new Response(String(adminLayout({ title: 'Pending changes', bodyContent: body, email: admin.email, path: admin.path, siteOrigin: admin.siteOrigin })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

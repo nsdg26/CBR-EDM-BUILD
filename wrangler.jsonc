@@ -42,7 +42,13 @@
     "ADMIN_EMAIL": "cbredmadmin@gmail.com",
     // Any random string. Only used to salt rate-limit hashes; rotating it
     // just resets rate-limit history, it does not need to be memorable.
-    "RATE_LIMIT_SALT": "REPLACE_WITH_A_RANDOM_STRING"
+    "RATE_LIMIT_SALT": "REPLACE_WITH_A_RANDOM_STRING",
+    // The admin panel's own hostname (src/lib/hosts.js). Empty = off:
+    // /admin keeps working on cbrdance.org and cbredm.org as it always
+    // has. Set to "admin.cbrdance.org" only once that hostname is added to
+    // the Worker and to the Access application (README, step 10), and
+    // /admin on the other hostnames redirects there.
+    "ADMIN_HOST": ""
   },
   "observability": {
     "enabled": true

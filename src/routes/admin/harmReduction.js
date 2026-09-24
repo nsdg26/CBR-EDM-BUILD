@@ -6,7 +6,7 @@ import { getSetting, setSetting } from '../../lib/settings.js';
 import { HARM_REDUCTION_INTRO_KEY, HARM_REDUCTION_INTRO_DEFAULT } from '../harmReduction.js';
 
 function page(admin, body) {
-  return new Response(String(adminLayout({ title: 'Harm reduction links', bodyContent: body, email: admin.email, path: admin.path })), {
+  return new Response(String(adminLayout({ title: 'Harm reduction links', bodyContent: body, email: admin.email, path: admin.path, siteOrigin: admin.siteOrigin })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

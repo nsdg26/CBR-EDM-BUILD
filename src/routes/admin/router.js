@@ -1,4 +1,5 @@
 import { requireAdmin } from '../../lib/auth.js';
+import { isAdminHost, publicOriginFor } from '../../lib/hosts.js';
 import { handleAdminQueue } from './queue.js';
 import {
   handleEventList, handleEventNewForm, handleEventEditForm, handleEventCreate, handleEventUpdate,
@@ -41,6 +42,10 @@ export async function adminRouter(request, env) {
   // shell can mark the current nav link without threading the request
   // through each page helper.
   admin.path = path;
+  // Where the public site is, for links out of the admin ("View the site",
+  // a new edit link): the same origin as before, or the public one when
+  // the admin is on its own hostname (lib/hosts.js).
+  admin.siteOrigin = isAdminHost(url) ? publicOriginFor(url) : url.origin;
 
   if (path === '/admin' && method === 'GET') return handleAdminQueue(request, env, admin);
 

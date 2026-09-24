@@ -46,7 +46,7 @@ export async function handleStats(request, env, admin) {
   ).all();
 
   const body = statsPage(totals, topByViews, topByClicks, perCrew);
-  return new Response(String(adminLayout({ title: 'Stats', bodyContent: body, email: admin.email, path: admin.path })), {
+  return new Response(String(adminLayout({ title: 'Stats', bodyContent: body, email: admin.email, path: admin.path, siteOrigin: admin.siteOrigin })), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }

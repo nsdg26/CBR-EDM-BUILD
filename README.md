@@ -98,6 +98,29 @@ with access to accounts, a card, and a domain registrar.
     deploy automatically.
 13. **Custom domain.** Attach it to the Worker once everything above is in
     place.
+14. **Admin on its own address (admin.cbrdance.org).** So the admin app
+    and the public app can both be installed on one phone (see
+    `src/lib/hosts.js` for why they can't share a domain). Safe to leave
+    until you're ready: until the last step, `/admin` keeps working where
+    it is.
+    1. **Add the address to the Worker.** In the Worker's settings, under
+       Domains & Routes, add a custom domain: `admin.cbrdance.org`.
+       Cloudflare creates the DNS record for it.
+    2. **Add it to the existing Access application**, not a new one. Open
+       the application that already protects `cbrdance.org/admin` and add
+       another hostname to it: subdomain `admin`, domain `cbrdance.org`,
+       path `admin`. It has to be the same application: the Worker only
+       accepts sign-ins carrying that application's AUD tag
+       (`vars.ACCESS_AUD`), so a new application's sign-ins would be
+       refused. Path `admin`, like the existing hostnames, leaves the
+       app's manifest and icons reachable for installing.
+    3. **Test it.** Open `https://admin.cbrdance.org`, sign in, and check
+       the queue loads. Install the admin app from there.
+    4. **Switch over.** Set `vars.ADMIN_HOST` in `wrangler.jsonc` to
+       `"admin.cbrdance.org"` and deploy. `/admin` on cbrdance.org and
+       cbredm.org then redirects to the new address, keeping the rest of
+       the link. To undo, set it back to `""`: the redirect is temporary
+       (302), so browsers don't hold on to it.
 
 ## Deploying
 

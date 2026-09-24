@@ -20,6 +20,7 @@ import { handleCrewsDirectory, handleCrewProfile } from './routes/crews.js';
 import { handlePoster } from './routes/poster.js';
 import { handleFlyer } from './routes/flyer.js';
 import { notFound } from './lib/http.js';
+import { isAdminHost, isAdminPath, publicOriginFor, adminRedirectFor } from './lib/hosts.js';
 
 /**
  * Simple path-based router. Section 6 lists every route.
@@ -30,6 +31,10 @@ export async function router(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+
+  if (isAdminHost(url)) return adminHostRouter(request, env, url);
+  const adminRedirect = adminRedirectFor(request, env);
+  if (adminRedirect) return Response.redirect(adminRedirect, 302);
 
   if (path === '/') return handleHome(request, env);
   if (path === '/admin' || path.startsWith('/admin/')) return adminRouter(request, env);
@@ -98,4 +103,27 @@ export async function router(request, env) {
     if (response.status !== 404) return response;
     return notFound();
   });
+}
+
+/**
+ * The admin panel's own hostname (see lib/hosts.js). Serves the admin,
+ * the admin app's manifest and the site's static files; its root goes to
+ * the queue, and anything else (an event page linked from stats, the
+ * poster in the nav) is the public site's, so it goes there, same path.
+ * @param {Request} request
+ * @param {import('./env.js').Env} env
+ * @param {URL} url
+ */
+async function adminHostRouter(request, env, url) {
+  const path = url.pathname;
+  if (path === '/') return Response.redirect(new URL('/admin', url), 302);
+  if (isAdminPath(path)) return adminRouter(request, env);
+  if (path === '/manifest-admin.webmanifest') return handleAdminManifest();
+  if (path === '/robots.txt') {
+    return new Response('User-agent: *\nDisallow: /\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+
+  const asset = await env.ASSETS.fetch(request);
+  if (asset.status !== 404) return asset;
+  return Response.redirect(`${publicOriginFor(url)}${path}${url.search}`, 302);
 }
