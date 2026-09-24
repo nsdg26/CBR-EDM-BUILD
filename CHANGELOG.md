@@ -6,6 +6,20 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Long headliner and venue names ran off the edges of the generated
+  flyer: both were drawn at a fixed size with no width check. They now
+  wrap and shrink to fit (flyer engine 0.13.0), and a test measures every
+  line of text on a flyer against the margins and against each other.
+- The A6 printable poster printed on the printer's default paper (US
+  Letter or A4) with the A6 sheet in one corner. Its page rule said
+  `size: A6`, which Chrome doesn't recognise, so the rule was dropped.
+  Both sizes now give the page in millimetres, and print to exactly
+  105 x 148mm and 210 x 297mm.
+- The record-style poster's QR showed faint hairline seams between its
+  modules on screen and in PDF viewers, a grid through the code. The
+  modules are now one shape, so touching modules merge. The plain-style
+  QR sat in a white box on the grey sheet; it's drawn in the sheet's
+  paper and toner now. Both still decode at every size checked.
 - Saving a legacy lineup (plain act names, written before the DJ rows
   existed) through any DJ-row form, even untouched, dropped its headliner:
   the rows opened with nothing ticked, and a new-format lineup with no
@@ -701,6 +715,17 @@ after deployment.
 Every visual change to the generated flyer engine, in order. See
 `FLYER_ENGINE_VERSION` in `src/flyers/index.js`.
 
+- **0.13.0** - Long headliner and venue names fit the flyer (owner
+  review). The headliner was drawn at a flat 50px and the venue label at
+  a flat 37px with no width check, so a long name ran off both edges (one
+  of the test fixtures already did). A headliner now wraps to two lines,
+  then shrinks, like the title; the venue label shrinks to 22px, then
+  breaks onto a second line, with each of its four placements allowing
+  for the extra height. Contour lines are also written as joined paths
+  instead of one move per segment, the same lines in 42-50% fewer bytes
+  (26-34% gzipped), with round joins so the joined lines don't spike at
+  sharp bends. Pixel-compared against 0.12.3: at most 0.01% of pixels
+  differ, all anti-aliasing at those joins.
 - **0.12.3** - `contour` draws the event's name on a flyer with no
   lineup again (owner report, seen live). The title was skipped whenever
   it matched `event.headliner`, but normalise.js falls back to the title

@@ -43,13 +43,17 @@ export function recordQrSvg(qr, options) {
   const centre = viewBox / 2;
   const half = modules / 2;
 
+  // Every dark module is a square in one single path, not a <rect> each.
+  // Separate rects are anti-aliased edge by edge, so neighbouring modules
+  // showed light hairline seams between them on screen and in PDF viewers
+  // (the 1.02 overlap each used to carry didn't stop it), a grid laid
+  // through the code. One path is filled as one shape, so modules that
+  // touch simply merge.
   let cells = '';
   for (let row = 0; row < modules; row++) {
     for (let column = 0; column < modules; column++) {
       if (!qr.isDark(row, column)) continue;
-      // A hair over 1 module wide so neighbouring cells meet cleanly
-      // instead of showing hairline gaps at print resolution.
-      cells += `<rect x="${round(centre - half + column)}" y="${round(centre - half + row)}" width="1.02" height="1.02"/>`;
+      cells += `M${round(centre - half + column)} ${round(centre - half + row)}h1v1h-1z`;
     }
   }
 
@@ -67,7 +71,7 @@ export function recordQrSvg(qr, options) {
     ${grooves.map((r) => `<circle cx="${round(centre)}" cy="${round(centre)}" r="${round(r)}"/>`).join('\n    ')}
   </g>
   <circle cx="${round(centre)}" cy="${round(centre)}" r="${round(labelRadius)}" fill="${paper}"/>
-  <g fill="${ink}">${cells}</g>
+  <path fill="${ink}" d="${cells}"/>
 </svg>`,
   };
 }

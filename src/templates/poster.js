@@ -59,7 +59,13 @@ export function posterPage(homeUrl, size, style = 'record') {
       groove: GROOVE,
       label: `Scan to open ${config.siteName}`,
     }).svg
-    : qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+    // The library paints its own white square and pure black modules;
+    // recoloured to the sheet's paper and toner like the record, so the
+    // code no longer sits in a white box on the grey paper, and its quiet
+    // zone runs straight on into the blank sheet around it.
+    : qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true })
+      .replace('fill="white"', `fill="${PAPER}"`)
+      .replace('fill="black"', `fill="${TONER}"`);
 
   return html`<!doctype html>
 <html lang="en-AU">
@@ -177,7 +183,11 @@ export function posterPage(homeUrl, size, style = 'record') {
     }
 
     @media print {
-      @page { size: ${dimensions.label}; margin: 0; }
+      /* In millimetres, not the "A4"/"A6" keywords this used to print:
+         Chrome doesn't know A6 as a page size, dropped the whole rule and
+         fell back to the printer's default paper, so an A6 poster came out
+         as a small sheet in the corner of a full US Letter or A4 page. */
+      @page { size: ${dimensions.widthMm}mm ${dimensions.heightMm}mm; margin: 0; }
       body { background: none; }
       .screen-only { display: none; }
       .sheet { margin: 0; }

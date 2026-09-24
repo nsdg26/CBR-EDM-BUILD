@@ -320,7 +320,7 @@ test('contour highlights the level closest to the venue\'s own elevation, not a 
     const event = { ...FIXTURES.full, id: `evt_elevcheck${i}`, flyer_template: 'contour', elevation_grid: JSON.stringify(grid) };
     const result = render(event, { now: FIXTURE_NOW });
 
-    const paths = [...result.svg.matchAll(/<path d="M -?[\d.]+ (-?[\d.]+)[^"]*" fill="none" stroke="([^"]+)" stroke-width="(2\.5|1)"/g)];
+    const paths = [...result.svg.matchAll(/<path d="M ?-?[\d.]+ (-?[\d.]+)[^"]*" fill="none" stroke="([^"]+)" stroke-width="(2\.5|1)"/g)];
     assert.ok(paths.length > 1, `seed ${i}: expected multiple contour levels`);
     const ys = paths.map(([, y]) => Number(y));
     const highlightedYs = paths.filter(([, , , w]) => w === '2.5').map(([, y]) => Number(y));
@@ -408,4 +408,74 @@ test('the render memo never serves a stale flyer', () => {
   assert.notEqual(render(FIXTURES.full, { now: afterEnd }).svg, before.svg);
   // And another surface.
   assert.notEqual(render(FIXTURES.full, { surface: 'scrap', now: FIXTURE_NOW }).svg, before.svg);
+});
+
+// Every piece of text on a flyer, measured with the engine's own font
+// metrics and placed by its x, anchor and letter-spacing. The status
+// stamp is skipped: it is rotated and meant to sit across other things.
+function textBoxes(svg) {
+  const unescape = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+  const boxes = [];
+  for (const [, attrs, content] of svg.matchAll(/<text([^>]*)>([^<]*)<\/text>/g)) {
+    const get = (name) => (attrs.match(new RegExp(`\\s${name}="([^"]*)"`)) || [])[1];
+    if (/Stencil/.test(get('font-family') || '')) continue;
+    const size = Number(get('font-size'));
+    const spacing = get('letter-spacing') || '0';
+    const letterSpacing = spacing.endsWith('em') ? parseFloat(spacing) * size : parseFloat(spacing) || 0;
+    const text = unescape(content);
+    const width = measure(text, { font: 'archivo', size, letterSpacing });
+    const x = Number(get('x'));
+    const anchor = get('text-anchor') || 'start';
+    const left = anchor === 'middle' ? x - width / 2 : anchor === 'end' ? x - width : x;
+    const y = Number(get('y'));
+    boxes.push({ text, left, right: left + width, top: y - size * 0.72, bottom: y });
+  }
+  return boxes;
+}
+
+const LONG_TEXT_CASES = {
+  'long venue name': { venue_name: 'The Old Canberra Inn Beer Garden and Function Rooms' },
+  'very long venue name': { venue_name: 'Bungendore Showground Pavilion and Camping Area Behind The Old Railway Station' },
+  'long headliner': { lineup: 'DJ Somebody With A Really Quite Long Name b2b Another Person\nSupport' },
+  'two long headliners': { lineup: 'Kylo b2b Mantis b2b Friends Of The Collective | | headliner\nResidents All Night Long | | headliner' },
+  'long presenter': { crew_name: 'The Canberra Region Underground Electronic Music Appreciation Society Incorporated' },
+  'everything long': {
+    title: 'Golden Days Music & Wine Festival Weekender',
+    venue_name: 'Bungendore Showground Pavilion and Camping Area',
+    lineup: Array.from({ length: 24 }, (_, i) => `Act Number ${i + 1} With A Name${i === 0 ? ' | | headliner' : ' | '}`).join('\n'),
+  },
+};
+
+const TEXT_CASES = {
+  ...FIXTURES,
+  ...Object.fromEntries(Object.entries(LONG_TEXT_CASES).map(([name, fields]) => [name, { ...FIXTURES.full, ...fields }])),
+};
+
+for (const [name, fixture] of Object.entries(TEXT_CASES)) {
+  test(`${name}: every line of text fits inside the margins, and none overlap`, () => {
+    // Regression: the headliner (a flat 50px) and the venue label (a flat
+    // 37px) had no width check, so a long name ran off both edges.
+    for (const surface of ['page', 'scrap']) {
+      const boxes = textBoxes(render({ ...fixture, flyer_template: 'contour' }, { surface, now: FIXTURE_NOW }).svg);
+      for (const box of boxes) {
+        assert.ok(box.left >= 71 && box.right <= 1009, `${surface}: "${box.text}" spans ${box.left.toFixed(0)}..${box.right.toFixed(0)}, outside 72..1008`);
+      }
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          const [a, b] = [boxes[i], boxes[j]];
+          const overlaps = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          assert.ok(!overlaps, `${surface}: "${a.text}" overlaps "${b.text}"`);
+        }
+      }
+    }
+  });
+}
+
+test('contour lines are written as joined paths, not one move per segment', () => {
+  const svg = render({ ...FIXTURES.full, flyer_template: 'contour' }, { surface: 'page', now: FIXTURE_NOW }).svg;
+  const pathData = [...svg.matchAll(/<path d="([^"]+)" fill="none"/g)].map(([, d]) => d).join('');
+  const moves = (pathData.match(/M/g) || []).length;
+  const points = (pathData.match(/-?\d+\.\d/g) || []).length / 2;
+  // Unjoined, every piece was "M a L b": exactly one move per two points.
+  assert.ok(moves < points / 4, `${moves} moves for ${points} points`);
 });

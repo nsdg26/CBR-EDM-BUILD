@@ -39,7 +39,11 @@ test('recordQrSvg draws one cell per dark module', () => {
   const n = qr.getModuleCount();
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) dark++;
 
-  assert.equal((svg.match(/<rect /g) || []).length, dark);
+  const cells = svg.match(/M[-\d.]+ [-\d.]+h1v1h-1z/g) || [];
+  assert.equal(cells.length, dark);
+  // One path, not a shape per module, so touching modules merge instead
+  // of showing anti-aliasing seams between them.
+  assert.doesNotMatch(svg, /<rect /);
   assert.match(svg, /aria-label="Scan me"/);
 });
 
@@ -47,8 +51,9 @@ test('recordQrSvg centres the symbol on the label', () => {
   const qr = madeQr();
   const { svg, geometry } = recordQrSvg(qr, { paper: '#fff', ink: '#000', groove: '#888', label: 'x' });
   const centre = geometry.viewBox / 2;
-  const xs = [...svg.matchAll(/<rect x="([-\d.]+)" y="([-\d.]+)"/g)].map((m) => Number(m[1]));
-  const ys = [...svg.matchAll(/<rect x="([-\d.]+)" y="([-\d.]+)"/g)].map((m) => Number(m[2]));
+  const cells = [...svg.matchAll(/M([-\d.]+) ([-\d.]+)h1v1h-1z/g)];
+  const xs = cells.map((m) => Number(m[1]));
+  const ys = cells.map((m) => Number(m[2]));
   const span = (v) => (Math.min(...v) + Math.max(...v) + 1) / 2;
   assert.ok(Math.abs(span(xs) - centre) < 0.01, 'symbol is off centre horizontally');
   assert.ok(Math.abs(span(ys) - centre) < 0.01, 'symbol is off centre vertically');

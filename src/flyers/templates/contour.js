@@ -11,7 +11,7 @@
 
 import { ticketFooter, TICKET_FOOTER_HEIGHT } from '../parts/ticketFooter.js';
 import { measure } from '../metrics.js';
-import { fitBlock, fitSingleLine } from '../layout.js';
+import { fitBlock, fitSingleLine, wrap } from '../layout.js';
 import { escapeXml } from '../xml.js';
 import { range } from '../seed.js';
 
@@ -163,8 +163,53 @@ function marchingSquaresSegments(grid, threshold, toScreen, budget) {
   return segments;
 }
 
+/**
+ * One contour level's segments as path data, joined into continuous lines.
+ * Marching squares hands back every cell's piece separately, and adjacent
+ * cells share exact endpoints, so writing each as its own "M a L b" put
+ * every point in the file twice plus a move per piece -- path data was
+ * over 80% of a board card's flyer. Chaining pieces that meet (matched on
+ * the same one-decimal text they're written with) draws the same lines in
+ * roughly half the bytes. Map insertion order keeps it deterministic.
+ * @param {[{ x: number, y: number }, { x: number, y: number }][]} segments
+ */
 function segmentsToPath(segments) {
-  return segments.map(([a, b]) => `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)}`).join(' ');
+  const fmt = (p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  const ends = segments.map(([a, b]) => [fmt(a), fmt(b)]);
+  // Usually two pieces meet at a point, but a level passing exactly
+  // through a grid corner meets up to four, so this keeps a list.
+  const byPoint = new Map();
+  ends.forEach(([a, b], i) => {
+    for (const key of [a, b]) {
+      const list = byPoint.get(key);
+      if (list) list.push(i);
+      else byPoint.set(key, [i]);
+    }
+  });
+
+  const used = new Uint8Array(ends.length);
+  // Follows unused pieces on from the chain's last point, in place.
+  const extend = (chain) => {
+    for (;;) {
+      const at = chain[chain.length - 1];
+      const next = byPoint.get(at).find((j) => !used[j]);
+      if (next === undefined) return;
+      used[next] = 1;
+      chain.push(ends[next][0] === at ? ends[next][1] : ends[next][0]);
+    }
+  };
+
+  const paths = [];
+  for (let i = 0; i < ends.length; i++) {
+    if (used[i]) continue;
+    used[i] = 1;
+    const chain = [ends[i][0], ends[i][1]];
+    extend(chain);
+    chain.reverse();
+    extend(chain);
+    paths.push(`M${chain[0]}L${chain.slice(1).join(' ')}`);
+  }
+  return paths.join('');
 }
 
 const TEXT_MASK_PADDING = 10;
@@ -180,6 +225,12 @@ const CAP_HEIGHT_RATIO = 0.72;
 // a support act's name (which fits at up to 19, see fitNamesBlock's call
 // in buildActsBlock).
 const HEADLINER_SIZE = 50;
+// A headliner too long for one line at 50px (a "b2b" pairing, a long
+// crew name) wraps to two lines, then shrinks, the same way the title
+// does -- it used to be drawn at a flat 50px and ran off both edges.
+const HEADLINER_MIN_SIZE = 28;
+const HEADLINER_MAX_LINES = 2;
+const HEADLINER_LEADING = 1.12;
 const EVENT_TITLE_SIZE = 66;
 // A long title wraps rather than shrinking to nothing. Two lines is the
 // shape to aim for, since past that the name starts competing with the
@@ -406,7 +457,18 @@ function buildActsBlock(ctx, event) {
 
   if (headlinerActs.length) {
     for (const act of headlinerActs) {
-      line(act.name.toUpperCase(), HEADLINER_SIZE, { weight: 800 });
+      const name = act.name.toUpperCase();
+      if (measure(name, { font: 'archivo', size: HEADLINER_SIZE }) <= canvas.contentWidth) {
+        line(name, HEADLINER_SIZE, { weight: 800 });
+        continue;
+      }
+      // Never cut: a name that still doesn't fit two lines at the
+      // minimum size takes a third rather than losing any of it.
+      const fit = fitBlock(name, {
+        width: canvas.contentWidth,
+        height: HEADLINER_SIZE * HEADLINER_LEADING * HEADLINER_MAX_LINES + 1,
+      }, { minSize: HEADLINER_MIN_SIZE, maxSize: HEADLINER_SIZE, font: 'archivo', leading: HEADLINER_LEADING });
+      for (const nameLine of fit.lines) line(nameLine, fit.size, { weight: 800 });
     }
     top += 8;
 
@@ -473,7 +535,9 @@ function renderRealTerrain(ctx, rawGrid) {
     const color = isHighlight ? palette.accent : palette.paper;
     const width = isHighlight ? 2.5 : 1;
     const opacity = isHighlight ? 1 : 0.35;
-    contourLines += `<path d="${segmentsToPath(segments)}" fill="none" stroke="${color}" stroke-width="${width}" opacity="${opacity}"/>`;
+    // Round joins now the pieces are continuous lines: the default miter
+    // join spikes out at a sharp bend, most visibly on the 2.5px highlight.
+    contourLines += `<path d="${segmentsToPath(segments)}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linejoin="round" opacity="${opacity}"/>`;
     if (budget <= 0) break;
   }
 
@@ -579,6 +643,38 @@ function renderSyntheticTerrain(ctx) {
   return renderRealTerrain(ctx, diamondSquareGrid(random, PROCEDURAL_GRID_SIZE));
 }
 
+// The venue label: 37px (between the headliner and the old 18px label,
+// owner request, so the venue reads as obvious), tracked out like a map
+// label. A long venue name used to be drawn at that size regardless and
+// ran off the left edge; it now shrinks to fit, and only a name too long
+// even at the minimum breaks onto a second line. Never truncated: it's
+// where the event is.
+const VENUE_SIZE = 37;
+const VENUE_MIN_SIZE = 22;
+const VENUE_TRACKING = 0.1;
+const VENUE_LEADING = 1.25;
+
+/**
+ * @param {string} text - already upper-cased
+ * @param {number} maxWidth
+ * @returns {{ size: number, lines: string[], width: number, lineHeight: number }}
+ */
+function fitVenueLabel(text, maxWidth) {
+  const widthAt = (value, size) => measure(value, { font: 'archivo', size, letterSpacing: size * VENUE_TRACKING });
+  let size = VENUE_SIZE;
+  while (size > VENUE_MIN_SIZE && widthAt(text, size) > maxWidth) size -= 1;
+
+  const lines = widthAt(text, size) <= maxWidth
+    ? [text]
+    : wrap(text, maxWidth, { font: 'archivo', size, letterSpacing: size * VENUE_TRACKING });
+  return {
+    size,
+    lines,
+    width: Math.max(...lines.map((value) => widthAt(value, size))),
+    lineHeight: size * VENUE_LEADING,
+  };
+}
+
 export default {
   id: 'contour',
   name: 'Contour map',
@@ -615,18 +711,20 @@ export default {
     const venueText = event.locationTba ? 'LOCATION TBA' : event.venueName;
     if (venueText) {
       const upperVenue = venueText.toUpperCase();
-      // Halfway between the headliner's 56 and the label's old 18,
-      // owner request: the venue name should read as more obvious.
-      const venueSize = 37;
-      const textWidth = measure(upperVenue, { font: 'archivo', size: venueSize, letterSpacing: venueSize * 0.1 });
       const markerToTextGap = 18;
       const edgeMargin = 24;
+      const venueLabel = fitVenueLabel(upperVenue, canvas.contentWidth - 2 * edgeMargin - markerToTextGap);
+      const venueSize = venueLabel.size;
+      const textWidth = venueLabel.width;
+      // Past the first line, for a name long enough to need two.
+      const extraHeight = (venueLabel.lines.length - 1) * venueLabel.lineHeight;
 
       // Which side of the marker the text sits on depends on labelDir
       // (owner feedback: keep it off the highlighted line where
       // possible) -- each direction needs its own text-anchor and its
       // own edge/zone clamp, since "past the edge" means something
-      // different depending on which way the text runs.
+      // different depending on which way the text runs. textY is the
+      // first line's baseline; further lines stack below it.
       let lx;
       let ly2;
       let textAnchor = 'start';
@@ -639,17 +737,20 @@ export default {
           Math.max(markerX, canvas.left + edgeMargin + markerToTextGap + textWidth),
           canvas.right - edgeMargin,
         );
-        ly2 = Math.min(Math.max(clearZoneBottom + 20, markerY), footerSafeBottom);
+        ly2 = Math.min(Math.max(clearZoneBottom + 20, markerY), footerSafeBottom - venueSize * 0.35 - extraHeight);
         textX = lx - markerToTextGap;
         textY = ly2 + venueSize * 0.35;
       } else if (labelDir === 'up' || labelDir === 'down') {
         textAnchor = 'middle';
         lx = Math.min(Math.max(markerX, canvas.left + edgeMargin + textWidth / 2), canvas.right - edgeMargin - textWidth / 2);
         if (labelDir === 'up') {
-          ly2 = Math.min(Math.max(clearZoneBottom + 20 + markerToTextGap + venueSize, markerY), footerSafeBottom);
-          textY = ly2 - markerToTextGap;
+          // The whole block sits above the marker, so its first line
+          // starts extraHeight higher, and the marker has to be that much
+          // further below the clear zone.
+          ly2 = Math.min(Math.max(clearZoneBottom + 20 + markerToTextGap + venueSize + extraHeight, markerY), footerSafeBottom);
+          textY = ly2 - markerToTextGap - extraHeight;
         } else {
-          ly2 = Math.min(Math.max(clearZoneBottom + 20, markerY), footerSafeBottom - markerToTextGap - venueSize);
+          ly2 = Math.min(Math.max(clearZoneBottom + 20, markerY), footerSafeBottom - markerToTextGap - venueSize - extraHeight);
           textY = ly2 + markerToTextGap + venueSize * 0.8;
         }
         textX = lx;
@@ -662,15 +763,19 @@ export default {
         // text sits venueSize * 0.35 below it, so the clamp needs the
         // same margin subtracted or a big enough font could still push
         // the label into the footer even though the marker looked clear.
-        ly2 = Math.min(Math.max(clearZoneBottom + 20, markerY), footerSafeBottom - venueSize * 0.35);
+        ly2 = Math.min(Math.max(clearZoneBottom + 20, markerY), footerSafeBottom - venueSize * 0.35 - extraHeight);
         textX = lx + markerToTextGap;
         textY = ly2 + venueSize * 0.35;
       }
 
       const markerSize = 8;
       parts.push(`<path d="${triangleMarker(lx, ly2, markerSize)}" stroke="${palette.accent}" stroke-width="2" fill="${palette.accent}"/>`);
-      parts.push(textMaskRect({ x: textX, y: textY, width: textWidth, size: venueSize, anchor: textAnchor, color: palette.tonerBlack }));
-      parts.push(`<text x="${textX.toFixed(1)}" y="${textY.toFixed(1)}" text-anchor="${textAnchor}" font-family="'Archivo',Arial,sans-serif" font-size="${venueSize}" letter-spacing="0.1em" fill="${palette.paper}">${escapeXml(upperVenue)}</text>`);
+      venueLabel.lines.forEach((labelLine, i) => {
+        const y = textY + i * venueLabel.lineHeight;
+        const width = measure(labelLine, { font: 'archivo', size: venueSize, letterSpacing: venueSize * VENUE_TRACKING });
+        parts.push(textMaskRect({ x: textX, y, width, size: venueSize, anchor: textAnchor, color: palette.tonerBlack }));
+        parts.push(`<text x="${textX.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${textAnchor}" font-family="'Archivo',Arial,sans-serif" font-size="${venueSize}" letter-spacing="${VENUE_TRACKING}em" fill="${palette.paper}">${escapeXml(labelLine)}</text>`);
+      });
     }
 
     parts.push(actsBlock.svg);
