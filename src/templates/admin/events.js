@@ -83,7 +83,7 @@ export function eventFormPage(event, crews, options = {}) {
     <form method="post" action="${action}">
       ${FIELD_DEFS_BEFORE_LINEUP.map((def) => renderField(def, event))}
 
-      ${lineupField({ initialRowsHtml: renderLineupRows(event.lineup), genres: event.genres })}
+      ${lineupField({ initialRowsHtml: renderLineupRows(event.lineup, event.lineup_equal_billing), genres: event.genres })}
 
       <div class="field">
         <label><input type="checkbox" name="lineup_equal_billing" value="1" ${event.lineup_equal_billing ? raw('checked') : ''}> Equal billing (no headliner -- list every act on the flyer at the same size)</label>

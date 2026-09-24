@@ -104,7 +104,7 @@ export async function handleCrewProfileUpdate(request, env) {
 // straight to the crew's own browser session, which is a lower-trust
 // context than the admin panel, section 12.
 const CREW_SAFE_EVENT_SELECT = `
-  SELECT id, title, start_at, end_at, venue_name, venue_address, genres, lineup,
+  SELECT id, title, start_at, end_at, venue_name, venue_address, genres, lineup, lineup_equal_billing,
     ticket_url, notes, age_restriction, status, visibility
   FROM events WHERE crew_id = ? ORDER BY start_at DESC
 `;

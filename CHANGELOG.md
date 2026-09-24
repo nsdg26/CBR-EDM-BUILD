@@ -6,6 +6,12 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- Saving a legacy lineup (plain act names, written before the DJ rows
+  existed) through any DJ-row form, even untouched, dropped its headliner:
+  the rows opened with nothing ticked, and a new-format lineup with no
+  headliner reads as equal billing, so the flyer lost its big headliner
+  line. The rows now open with the first act ticked, as the flyer reads
+  it, unless the event is marked equal billing.
 - Event names missing from the generated flyer (owner report, seen live)
   for any event without a lineup. The contour template skipped the title
   when it matched the headliner, and with no lineup the headliner falls
@@ -182,6 +188,11 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Changed (styling consistency review)
+- The crew dashboard's add and edit forms use the same DJ-row lineup
+  editor as the submit, edit-your-listing and admin forms, instead of a
+  plain "one act per line" box and a single Genre field. Crews can mark a
+  headliner and give each act a set time and genre, and an existing
+  lineup opens as rows rather than raw "Name | note | headliner" text.
 - Every display heading is now in capitals. h2 was the odd one out in
   mixed case, so pages went capitals, lower case, capitals (h1, h2, h3),
   and crew cards were the only cards with mixed-case names.

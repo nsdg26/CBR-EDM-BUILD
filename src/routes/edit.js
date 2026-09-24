@@ -61,6 +61,9 @@ export async function handleEditLoad(request, env) {
       location_how_to_find: event.location_how_to_find,
       genres: event.genres,
       lineup: event.lineup,
+      // So the DJ rows can tick a legacy lineup's first act as headliner
+      // (see actsWithHeadliners in public/js/lineup-rows.js).
+      lineup_equal_billing: event.lineup_equal_billing,
       ticket_url: event.ticket_url,
       notes: event.notes,
       age_restriction: event.age_restriction,

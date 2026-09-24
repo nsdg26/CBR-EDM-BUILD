@@ -63,7 +63,7 @@
           lineupInput: form.querySelector('[data-lineup-value]'),
           genresInput: form.querySelector('[data-genres-value]'),
           addButton: form.querySelector('[data-add-dj]'),
-          initialActs: window.CbrLineupRows.parseLineupText(event.lineup),
+          initialActs: window.CbrLineupRows.actsWithHeadliners(event.lineup, event.lineup_equal_billing),
           initialGenres: event.genres,
         });
       }

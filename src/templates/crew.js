@@ -1,13 +1,21 @@
 import { html } from '../lib/escape.js';
+import { lineupField } from './lineupRow.js';
 
-const FIELD_DEFS = [
+// The lineup (and with it the event's genres) is the shared DJ-row field
+// from lineupRow.js, rendered between these two groups -- the same editor
+// the submit, edit-your-listing and admin forms use. It used to be a
+// plain "one act per line" textarea plus a single Genre box here, so a
+// crew saw raw "Name | note | headliner" text for any lineup written by
+// another form, and couldn't mark a headliner or give a set time.
+const FIELD_DEFS_BEFORE_LINEUP = [
   ['title', 'Title', 'text'],
   ['start_at_local', 'Start (Canberra time)', 'datetime-local'],
   ['end_at_local', 'End (Canberra time, leave blank for "til late")', 'datetime-local'],
   ['venue_name', 'Venue name', 'text'],
   ['venue_address', 'Venue address', 'text'],
-  ['genres', 'Genre', 'text'],
-  ['lineup', 'Lineup (one act per line)', 'textarea'],
+];
+
+const FIELD_DEFS_AFTER_LINEUP = [
   ['ticket_url', 'Ticket URL', 'url'],
   ['notes', 'Anything else worth knowing', 'textarea'],
 ];
@@ -116,15 +124,26 @@ function flyerPickerMarkup(scope, { withReroll }) {
   </div>`;
 }
 
+function fieldMarkup(scope, [name, label, type]) {
+  return html`<div class="field">
+    <label for="${scope}-${name}">${label}</label>
+    ${type === 'textarea'
+      ? html`<textarea id="${scope}-${name}" data-field="${name}"></textarea>`
+      : type === 'url'
+        ? html`<input type="text" inputmode="url" id="${scope}-${name}" data-field="${name}">`
+        : html`<input type="${type}" id="${scope}-${name}" data-field="${name}">`}
+  </div>`;
+}
+
+/**
+ * One event form's fields. Rows start empty and are filled client-side
+ * (public/js/crew-dashboard.js), since the dashboard is a JSON API page.
+ * @param {'create'|'edit'} scope
+ */
 function eventFieldsMarkup(scope) {
   return html`<div data-scope="${scope}">
-    ${FIELD_DEFS.map(([name, label, type]) => html`<div class="field">
-      <label for="${scope}-${name}">${label}</label>
-      ${type === 'textarea'
-        ? html`<textarea id="${scope}-${name}" data-field="${name}"></textarea>`
-        : type === 'url'
-          ? html`<input type="text" inputmode="url" id="${scope}-${name}" data-field="${name}">`
-          : html`<input type="${type}" id="${scope}-${name}" data-field="${name}">`}
-    </div>`)}
+    ${FIELD_DEFS_BEFORE_LINEUP.map((def) => fieldMarkup(scope, def))}
+    ${lineupField({ idPrefix: scope })}
+    ${FIELD_DEFS_AFTER_LINEUP.map((def) => fieldMarkup(scope, def))}
   </div>`;
 }

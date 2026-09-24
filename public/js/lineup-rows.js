@@ -43,6 +43,26 @@
   }
 
   /**
+   * Mirrors actsWithHeadliners in src/lib/lineup.js. What a form should
+   * hydrate its rows from, rather than parseLineupText alone: a legacy
+   * bare-name lineup has no headliner flags, and its first act is the
+   * headliner unless the event is marked equal billing. Hydrating it with
+   * every box unticked meant an untouched re-save wrote it back in the new
+   * format with no headliner at all -- which reads as equal billing, so
+   * the flyer quietly lost its big headliner line.
+   * @param {string|null} lineup
+   * @param {boolean|number} [legacyEqualBilling]
+   */
+  function actsWithHeadliners(lineup, legacyEqualBilling) {
+    var acts = parseLineupText(lineup);
+    var isNewFormat = (lineup || '').split('\n').some(function (line) { return line.indexOf('|') !== -1; });
+    if (isNewFormat) return acts;
+    return acts.map(function (act, i) {
+      return { name: act.name, note: act.note, headliner: !legacyEqualBilling && i === 0 };
+    });
+  }
+
+  /**
    * @param {Element} container - [data-lineup-rows]
    * @param {HTMLTemplateElement} template - [data-lineup-row-template]
    * @param {{ name?: string, note?: string, headliner?: boolean }} [act]
@@ -115,7 +135,8 @@
    * fill in, on every page that has this field.
    * @param {{ container: Element, template: HTMLTemplateElement, lineupInput: HTMLInputElement,
    *   genresInput?: HTMLInputElement, addButton?: Element, initialActs?: object[] }} options
-   * @returns {{ addRow: (act?: object) => Element, serializeNow: () => void }}
+   * @returns {{ addRow: (act?: object) => Element, serializeNow: () => void,
+   *   reset: (acts?: object[], genres?: string|null) => void }}
    */
   function init(options) {
     var container = options.container;
@@ -149,11 +170,28 @@
     if (!container.querySelector('[data-lineup-row]')) addRow(container, template);
     serializeNow();
 
+    /**
+     * Replaces every row with the given acts (one empty row if there are
+     * none) and re-seeds genres, for a form that loads one event after
+     * another into the same editor (the crew dashboard's Edit event).
+     * Calling init again for that would stack a second set of listeners
+     * on the same container and Add DJ button.
+     */
+    function reset(acts, genres) {
+      Array.prototype.slice.call(container.querySelectorAll('[data-lineup-row]'))
+        .forEach(function (row) { row.remove(); });
+      if (options.genresInput) options.genresInput.value = genres || '';
+      (acts || []).forEach(function (act) { addRow(container, template, act); });
+      if (!container.querySelector('[data-lineup-row]')) addRow(container, template);
+      serializeNow();
+    }
+
     return {
       addRow: function (act) { var row = addRow(container, template, act); serializeNow(); return row; },
       serializeNow: serializeNow,
+      reset: reset,
     };
   }
 
-  window.CbrLineupRows = { init: init, parseLineupText: parseLineupText };
+  window.CbrLineupRows = { init: init, parseLineupText: parseLineupText, actsWithHeadliners: actsWithHeadliners };
 })();

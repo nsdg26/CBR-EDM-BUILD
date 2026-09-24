@@ -1,5 +1,5 @@
 import { html, raw } from '../lib/escape.js';
-import { parseLineupText, splitNote } from '../lib/lineup.js';
+import { actsWithHeadliners, splitNote } from '../lib/lineup.js';
 
 /**
  * One DJ row's markup, section 9.1 rework: name, set time and genre in
@@ -32,10 +32,13 @@ export function lineupRowTemplate() {
  * Server-rendered DJ rows pre-filled from an existing event's lineup text,
  * for the admin event form -- a plain server-rendered page, unlike /edit,
  * so there's no client-side fetch-and-hydrate step to add rows from.
+ * Headliners resolved the way the flyer reads them, so a legacy lineup's
+ * first act arrives ticked and an untouched save keeps it the headliner.
  * @param {string|null} lineup
+ * @param {boolean|number} [legacyEqualBilling] - event.lineup_equal_billing
  */
-export function renderLineupRows(lineup) {
-  return parseLineupText(lineup).map((act) => {
+export function renderLineupRows(lineup, legacyEqualBilling = false) {
+  return actsWithHeadliners(lineup, legacyEqualBilling).map((act) => {
     const { genre, time } = splitNote(act.note);
     return lineupRowFields({ name: act.name, genre, time, headliner: act.headliner });
   }).join('');
@@ -49,11 +52,14 @@ export function renderLineupRows(lineup) {
  * submission) rather than left blank, since the aggregated value from the
  * rows only overwrites it once a row's genre box actually holds something
  * -- see serialize() in public/js/lineup-rows.js.
- * @param {{ initialRowsHtml?: string, genres?: string|null }} [options]
+ * @param {{ initialRowsHtml?: string, genres?: string|null, idPrefix?: string }} [options]
+ *   idPrefix - keeps the group label's id unique on a page with more than
+ *   one lineup field (the crew dashboard's add and edit forms)
  */
 export function lineupField(options = {}) {
-  return html`<div class="field field-lineup" role="group" aria-labelledby="lineup-label">
-    <span class="lineup-label" id="lineup-label">Lineup</span>
+  const labelId = `${options.idPrefix ? `${options.idPrefix}-` : ''}lineup-label`;
+  return html`<div class="field field-lineup" role="group" aria-labelledby="${labelId}">
+    <span class="lineup-label" id="${labelId}">Lineup</span>
     <div data-lineup-rows>${raw(options.initialRowsHtml || '')}</div>
     ${lineupRowTemplate()}
     <input type="hidden" name="lineup" data-lineup-value>

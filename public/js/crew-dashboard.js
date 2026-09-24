@@ -21,28 +21,65 @@
   var createFlyerPreview = createFlyerArea.querySelector('[data-crew-flyer-preview]');
   var createFlyerStatus = createFlyerArea.querySelector('[data-crew-flyer-status]');
 
+  // lineup and genres aren't in here: they come from each form's DJ-row
+  // editor (below), the same one the submit and edit-your-listing forms use.
   var FIELD_NAMES = ['title', 'start_at_local', 'end_at_local', 'venue_name', 'venue_address',
-    'genres', 'lineup', 'ticket_url', 'notes'];
+    'ticket_url', 'notes'];
 
   var currentKey = sessionStorage.getItem('cedm_crew_key');
   var currentEditId = null;
 
+  // Both event forms are wrapped in a [data-scope] div ahead of their
+  // flyer panel, which carries the same attribute -- so this is the first
+  // match, the fields.
+  function scopeContainer(scope) {
+    return document.querySelector('[data-scope="' + scope + '"]');
+  }
+
+  // One DJ-row editor per form, set up once. The edit form reuses its
+  // editor for whichever event is opened (lineup.reset), rather than
+  // calling init again, which would stack listeners on the same buttons.
+  function initLineup(scope) {
+    var container = scopeContainer(scope);
+    return window.CbrLineupRows.init({
+      container: container.querySelector('[data-lineup-rows]'),
+      template: container.querySelector('[data-lineup-row-template]'),
+      lineupInput: container.querySelector('[data-lineup-value]'),
+      genresInput: container.querySelector('[data-genres-value]'),
+      addButton: container.querySelector('[data-add-dj]'),
+    });
+  }
+
+  var lineups = { create: initLineup('create'), edit: initLineup('edit') };
+
   function scopedFields(scope) {
-    var container = document.querySelector('[data-scope="' + scope + '"]');
+    var container = scopeContainer(scope);
     var out = {};
     FIELD_NAMES.forEach(function (name) {
       var el = container.querySelector('[data-field="' + name + '"]');
       out[name] = el.value;
     });
+    // The editor keeps these in sync as rows change; serialising once more
+    // here just guarantees the very last keystroke is in the body.
+    lineups[scope].serializeNow();
+    out.lineup = container.querySelector('[data-lineup-value]').value;
+    out.genres = container.querySelector('[data-genres-value]').value;
     return out;
   }
 
   function setScopedFields(scope, event) {
-    var container = document.querySelector('[data-scope="' + scope + '"]');
+    var container = scopeContainer(scope);
     FIELD_NAMES.forEach(function (name) {
       var el = container.querySelector('[data-field="' + name + '"]');
       el.value = event[name] || '';
     });
+    // Headliners resolved the way the flyer reads them, so a legacy
+    // bare-name lineup opens with its first act ticked (see
+    // actsWithHeadliners in lineup-rows.js) and re-saving keeps it.
+    lineups[scope].reset(
+      window.CbrLineupRows.actsWithHeadliners(event.lineup, event.lineup_equal_billing),
+      event.genres
+    );
   }
 
   function api(path, body) {
@@ -124,9 +161,12 @@
     createPreviewTimer = setTimeout(refreshCreatePreview, 400);
   }
 
-  document.querySelectorAll('[data-scope="create"] [data-field]').forEach(function (el) {
-    el.addEventListener('input', scheduleCreatePreview);
-  });
+  // Delegated rather than bound to each field: DJ rows are added and
+  // removed after load, and removing one fires 'change' (not 'input') on
+  // the rows container, so both events are needed to cover a lineup edit.
+  var createFields = scopeContainer('create');
+  createFields.addEventListener('input', scheduleCreatePreview);
+  createFields.addEventListener('change', scheduleCreatePreview);
 
   var profileSection = crewArea.querySelector('[data-crew-profile]');
   var profileStatus = crewArea.querySelector('[data-crew-profile-status]');
