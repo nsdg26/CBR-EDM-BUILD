@@ -2,6 +2,7 @@ import { html } from '../lib/escape.js';
 import { isEventPast } from '../lib/dates.js';
 import { eventCard } from './eventCard.js';
 import { config } from '../config.js';
+import { installPrompt } from './installPrompt.js';
 
 const PAST_LIMIT = 12;
 
@@ -46,41 +47,15 @@ export function homePage(events, now = new Date()) {
     </div>
   `;
 
-  return { body: html`${body}${installPrompt()}`, hasUpcoming: upcoming.length > 0 };
-}
+  // The install notice, see templates/installPrompt.js.
+  const notice = installPrompt({
+    appName: config.shortName,
+    blurb: 'Opens straight to the board, like an app. No app store, no account.',
+    icon: '/icons/record.svg',
+    storageKey: 'cbr_install_prompt_dismissed',
+  });
 
-/**
- * The "put it on your home screen" notice, owner request: home page only,
- * from the first visit. Rendered hidden; public/js/install-prompt.js
- * decides whether to show it and which half. Browsers never let a page
- * install itself, so there are two versions:
- *
- * - Chrome, Edge, Samsung Internet (Android and desktop) fire
- *   beforeinstallprompt when the site is installable. The script holds
- *   that event and the Install button hands it back, which opens the
- *   browser's own install dialog.
- * - iPhone and iPad have no such event and no install prompt of any kind,
- *   so the only thing a page can do is say where Add to Home Screen is.
- *
- * Never shown inside the installed app, and gone for good on that device
- * once dismissed.
- */
-function installPrompt() {
-  return html`<aside class="install-prompt" data-install-prompt hidden aria-label="Install the app">
-    <span class="scrap-tape" aria-hidden="true"></span>
-    <img class="install-prompt-mark" src="/icons/record.svg" alt="" width="48" height="48">
-    <div class="install-prompt-body">
-      <p class="install-prompt-title">Put ${config.shortName} on your home screen</p>
-      <p data-install-variant="prompt" hidden>Opens straight to the board, like an app. No app store, no account.</p>
-      <p data-install-variant="ios" hidden>Tap
-        <svg class="install-prompt-share" viewBox="0 0 20 24" width="16" height="19" aria-hidden="true" focusable="false"><path d="M10 1v14M5 6l5-5 5 5M4 10H2v13h16V10h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</p>
-      <div class="install-prompt-actions">
-        <button type="button" data-install-accept data-install-variant="prompt" hidden>Install</button>
-        <button type="button" class="secondary" data-install-dismiss>Not now</button>
-      </div>
-    </div>
-  </aside>`;
+  return { body: html`${body}${notice}`, hasUpcoming: upcoming.length > 0 };
 }
 
 function emptyUpcoming() {

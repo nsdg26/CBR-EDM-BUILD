@@ -195,7 +195,10 @@ All notable changes to this project are documented here. Format follows
   is installable, which can be a moment after the board loads. iPhone and
   iPad have no install prompt of any kind, so there the notice says where
   Add to Home Screen is instead. Never shown inside the installed app,
-  and gone for good on that device once dismissed. Home page only.
+  and gone for good on that device once dismissed. On the public home
+  page, and on the admin queue for the admin panel's own app ("Put CBR
+  ADMIN on your home screen", red label icon), each remembering its own
+  dismissal so turning one down doesn't hide the other.
 - The admin panel installs to a phone as its own app, "CBR ADMIN", owner
   request, beside the public site rather than instead of it: its own
   manifest (`/manifest-admin.webmanifest`, id and scope `/admin`) and a

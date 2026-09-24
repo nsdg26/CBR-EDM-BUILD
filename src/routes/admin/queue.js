@@ -1,5 +1,7 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { html } from '../../lib/escape.js';
+import { config } from '../../config.js';
+import { installPrompt } from '../../templates/installPrompt.js';
 
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -29,6 +31,14 @@ export async function handleAdminQueue(request, env, admin) {
         <tr><td><a href="/admin/contact-messages">New contact messages</a></td><td>${newMessages.n}</td></tr>
       </tbody>
     </table>
+    ${installPrompt({
+      appName: config.adminShortName,
+      blurb: 'Opens straight to the queue, like an app. Sign-in stays with Cloudflare Access.',
+      icon: '/icons/record-admin.svg',
+      // Its own key: dismissing the public site's notice on this phone
+      // shouldn't also hide this one, or the other way round.
+      storageKey: 'cbr_admin_install_prompt_dismissed',
+    })}
   `;
 
   return new Response(String(adminLayout({ title: 'Queue', bodyContent: body, email: admin.email, path: admin.path })), {

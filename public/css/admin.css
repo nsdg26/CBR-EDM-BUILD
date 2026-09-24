@@ -233,7 +233,7 @@ body.page-admin .slogan-strip {
 
 /* An attachment on an inbound email or a converted event: a photo on the
    wall, given the paper border the rest of the panel content has. */
-.page-admin main img:not(.site-name-mark) {
+.page-admin main img:not(.site-name-mark):not(.install-prompt-mark) {
   max-width: 100%;
   height: auto;
   background: var(--paper);

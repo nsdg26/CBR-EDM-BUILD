@@ -1,11 +1,14 @@
-// The home page's "put it on your home screen" notice, owner request. The
-// markup and the reasoning for its two versions are in installPrompt()
-// in src/templates/home.js; this decides whether and which to show.
+// The "put it on your home screen" notice, owner request: the public home
+// page and the admin queue. The markup and the reasoning for its two
+// versions are in src/templates/installPrompt.js; this decides whether
+// and which to show.
 (function () {
   var notice = document.querySelector('[data-install-prompt]');
   if (!notice) return;
 
-  var DISMISSED_KEY = 'cbr_install_prompt_dismissed';
+  // Per app, from the markup, so the public site and the admin panel each
+  // remember their own dismissal.
+  var DISMISSED_KEY = notice.getAttribute('data-install-key') || 'cbr_install_prompt_dismissed';
 
   // Storage can be missing or throw (private browsing, blocked site
   // data). Worst case the notice shows again next visit, which is fine.
