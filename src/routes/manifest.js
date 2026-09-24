@@ -1,6 +1,58 @@
 import { config } from '../config.js';
 
 /**
+ * GET /manifest-admin.webmanifest: the admin panel as an app of its own,
+ * owner request, so the admin can be installed to a phone separately from
+ * the public site. Its own id and a scope of /admin, so it installs as a
+ * second app beside the public one rather than replacing it, and a red
+ * label record icon (icons/record-admin.svg) to tell the two apart.
+ *
+ * Served from outside /admin on purpose. Browsers fetch a manifest
+ * without cookies, so under /admin Cloudflare Access would answer with
+ * its sign-in redirect instead of the manifest and the install would
+ * silently fail. Nothing in here is private: a name, colours and icon
+ * paths, for a panel robots.txt already names.
+ */
+export function handleAdminManifest() {
+  const manifest = {
+    id: '/admin',
+    name: `${config.siteName} admin`,
+    short_name: config.adminShortName,
+    description: `The ${config.siteName} admin panel.`,
+    lang: 'en-AU',
+    dir: 'ltr',
+    start_url: '/admin',
+    scope: '/admin',
+    display: 'standalone',
+    background_color: config.themeColour,
+    theme_color: config.themeColour,
+    icons: [
+      { src: '/icons/icon-admin-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-admin-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-admin-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/record-admin.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+    ],
+    // Long-press the installed icon: the queues worth jumping straight to.
+    shortcuts: [
+      { name: 'Pending changes and requests', short_name: 'Changes', url: '/admin/changes' },
+      { name: 'Events', short_name: 'Events', url: '/admin/events' },
+      { name: 'Contact messages', short_name: 'Messages', url: '/admin/contact-messages' },
+    ],
+  };
+
+  return manifestResponse(manifest);
+}
+
+function manifestResponse(manifest) {
+  return new Response(JSON.stringify(manifest, null, 2), {
+    headers: {
+      'Content-Type': 'application/manifest+json; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}
+
+/**
  * GET /manifest.webmanifest: the web app manifest, which is what makes
  * the site installable to a home screen.
  *
@@ -17,6 +69,10 @@ import { config } from '../config.js';
  */
 export function handleManifest() {
   const manifest = {
+    // Explicit, and the same value it always defaulted to (start_url), so
+    // an already installed copy keeps its identity. Spelled out now that
+    // the admin panel installs as a second app with its own id.
+    id: '/',
     name: config.siteName,
     short_name: config.shortName,
     description: config.slogan,
@@ -44,10 +100,5 @@ export function handleManifest() {
     ],
   };
 
-  return new Response(JSON.stringify(manifest, null, 2), {
-    headers: {
-      'Content-Type': 'application/manifest+json; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
-    },
-  });
+  return manifestResponse(manifest);
 }

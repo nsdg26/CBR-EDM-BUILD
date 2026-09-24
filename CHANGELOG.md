@@ -187,6 +187,16 @@ All notable changes to this project are documented here. Format follows
   (`homeUrl` is always built as `origin + '/'`); stripped for display
   only, the QR code itself is unaffected.
 
+### Added
+- The admin panel installs to a phone as its own app, "CBR ADMIN", owner
+  request, beside the public site rather than instead of it: its own
+  manifest (`/manifest-admin.webmanifest`, id and scope `/admin`) and a
+  red label record icon so the two are easy to tell apart. The manifest
+  is served from outside `/admin` because a browser fetches it without
+  cookies, so Cloudflare Access would otherwise answer with a sign-in
+  redirect and the install would silently fail. Long-pressing the icon
+  offers Changes, Events and Messages.
+
 ### Changed (styling consistency review)
 - The crew dashboard's add and edit forms use the same DJ-row lineup
   editor as the submit, edit-your-listing and admin forms, instead of a

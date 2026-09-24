@@ -35,7 +35,8 @@ function isAdminNavCurrent(href, path) {
  * the header is built from the same .site-header / .site-nav markup.
  * That also means admin.css no longer keeps its own copy of the fonts,
  * the colours or the form and lineup-row styling to drift out of step.
- * Still no-store, still no public-site scripts it has no use for.
+ * Still no-store, still no public-site scripts it has no use for. It is
+ * installable as its own app, with its own manifest and icon.
  * @param {{ title: string, bodyContent: string, email: string, path?: string, now?: Date }} options
  */
 export function adminLayout({ title, bodyContent, email, path = '', now = new Date() }) {
@@ -55,6 +56,14 @@ export function adminLayout({ title, bodyContent, email, path = '', now = new Da
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+  <!-- Installable as its own app, owner request: see
+       handleAdminManifest in routes/manifest.js, including why the
+       manifest lives outside /admin. -->
+  <link rel="manifest" href="/manifest-admin.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon-admin.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="${config.adminShortName}">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="${config.themeColour}">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/admin.css">
@@ -88,6 +97,7 @@ export function adminLayout({ title, bodyContent, email, path = '', now = new Da
   <script src="/js/admin-confirm.js" defer></script>
   <script src="/js/lineup-rows.js" defer></script>
   <script src="/js/admin-events-form.js" defer></script>
+  <script src="/js/sw-register.js" defer></script>
 </body>
 </html>`;
 }

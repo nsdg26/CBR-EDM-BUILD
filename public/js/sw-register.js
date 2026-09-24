@@ -4,11 +4,12 @@
 (function () {
   if (!('serviceWorker' in navigator)) return;
 
-  // The admin panel is behind Cloudflare Access and served no-store. It
-  // has no business being installable or having a worker in front of its
-  // sign-in redirects, and its own shell doesn't load this file -- this
-  // is belt and braces in case that ever changes.
-  if (location.pathname === '/admin' || location.pathname.indexOf('/admin/') === 0) return;
+  // The admin panel loads this too now that it installs as its own app
+  // (owner request). It is the same worker at the same "/" scope, which
+  // already covered /admin once the public site had been visited, and it
+  // leaves every admin request alone: it only ever answers /fonts/ and
+  // /textures/ itself (see /sw.js), so Access's sign-in redirects and the
+  // no-store admin pages go straight to the network exactly as before.
 
   // Registration is not urgent and competes with the page's own fonts and
   // data for bandwidth, so it waits for load.

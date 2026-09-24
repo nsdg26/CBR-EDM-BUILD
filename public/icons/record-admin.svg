@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Vinyl record, red label">
+  <!-- The admin panel's app icon: record.svg with a red label, in the
+       site's stamp ink, so the installed admin app and the public site
+       can be told apart on a home screen at a glance. A red label is a
+       promo pressing, the copy that isn't for the public. The centre is a
+       dark spindle hole rather than the sodium dot, which would vanish
+       against the red.
+
+       Source for the admin PNGs beside this file (icon-admin-*.png,
+       apple-touch-icon-admin.png), which need regenerating whenever this
+       changes. Note for editors: see record.svg on hyphens in XML
+       comments. -->
+  <defs>
+    <clipPath id="disc">
+      <circle cx="256" cy="256" r="244"/>
+    </clipPath>
+  </defs>
+  <circle cx="256" cy="256" r="244" fill="#141312" stroke="#bab8b0" stroke-width="24"/>
+  <g clip-path="url(#disc)">
+    <path d="M-64 352 L352 -64 L480 64 L64 480 Z" fill="#ffffff" opacity="0.08"/>
+  </g>
+  <g fill="none" stroke="#63615a" stroke-width="7">
+    <circle cx="256" cy="256" r="211"/>
+    <circle cx="256" cy="256" r="189"/>
+    <circle cx="256" cy="256" r="167"/>
+    <circle cx="256" cy="256" r="145"/>
+    <circle cx="256" cy="256" r="123"/>
+    <circle cx="256" cy="256" r="101"/>
+  </g>
+  <circle cx="256" cy="256" r="82" fill="#8f1d1d"/>
+  <circle cx="256" cy="256" r="22" fill="#141312"/>
+</svg>

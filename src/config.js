@@ -12,6 +12,11 @@ export const config = {
   // truncates much past about 12 characters.
   shortName: 'CBR DANCE',
 
+  // The same, for the admin panel installed as its own app (manifest at
+  // /manifest-admin.webmanifest), so the two icons on a home screen say
+  // which is which.
+  adminShortName: 'CBR ADMIN',
+
   // Browser chrome colour (the phone status bar and task switcher on an
   // installed app, the tab strip on desktop). Matches --wall-base in
   // public/css/style.css; change both together.
