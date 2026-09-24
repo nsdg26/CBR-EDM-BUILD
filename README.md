@@ -102,7 +102,8 @@ with access to accounts, a card, and a domain registrar.
     and the public app can both be installed on one phone (see
     `src/lib/hosts.js` for why they can't share a domain). Safe to leave
     until you're ready: until the last step, `/admin` keeps working where
-    it is.
+    it is. The full walkthrough, with troubleshooting and how to undo it,
+    is in [`ADMIN-SUBDOMAIN-SETUP.md`](ADMIN-SUBDOMAIN-SETUP.md).
     1. **Add the address to the Worker.** In the Worker's settings, under
        Domains & Routes, add a custom domain: `admin.cbrdance.org`.
        Cloudflare creates the DNS record for it.
