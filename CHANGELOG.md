@@ -188,6 +188,14 @@ All notable changes to this project are documented here. Format follows
   only, the QR code itself is unaffected.
 
 ### Added
+- The home page suggests installing the site, owner request, from the
+  first visit. On Chrome, Edge and Samsung Internet (Android and
+  desktop) a taped paper notice offers Install, which opens the
+  browser's own install dialog; it appears when the browser says the site
+  is installable, which can be a moment after the board loads. iPhone and
+  iPad have no install prompt of any kind, so there the notice says where
+  Add to Home Screen is instead. Never shown inside the installed app,
+  and gone for good on that device once dismissed. Home page only.
 - The admin panel installs to a phone as its own app, "CBR ADMIN", owner
   request, beside the public site rather than instead of it: its own
   manifest (`/manifest-admin.webmanifest`, id and scope `/admin`) and a

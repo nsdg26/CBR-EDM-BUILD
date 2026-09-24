@@ -706,6 +706,91 @@ code {
   transform: rotate(-1deg);
 }
 
+/* The home page's install notice (templates/home.js, install-prompt.js):
+   a scrap of paper taped to the bottom of the screen, since it has to be
+   seen without shoving the board down. Paper and toner like a card, with
+   the same tape strip, and no entrance animation (DESIGN.md: none on
+   load). Clear of the screen edges and of an iPhone's home bar. */
+.install-prompt {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) rotate(-0.6deg);
+  width: min(30rem, calc(100% - 2rem));
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  padding: 1.1rem 1.1rem 0.9rem;
+  background: var(--paper);
+  color: var(--toner);
+  /* The one shadow on the site: it's the only thing that floats over the
+     wall rather than sitting on it, and without an edge it read as part
+     of whichever card was underneath. Hard and flat, not a soft blur. */
+  box-shadow: 0 0 0 1px var(--toner), 4px 4px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* Room under the board while the notice is up, so the last card can
+   still be scrolled clear of it rather than sitting behind it for good. */
+.has-install-prompt main {
+  padding-bottom: 16rem;
+}
+
+.install-prompt-mark {
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+
+.install-prompt-body {
+  min-width: 0;
+}
+
+.install-prompt p {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-small);
+}
+
+.install-prompt .install-prompt-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-h3);
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.install-prompt-share {
+  vertical-align: -3px;
+}
+
+.install-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+/* On paper, so the wall's buttons are inverted: the primary is toner, the
+   secondary a toner outline (the global secondary is paper-on-wall and
+   would vanish here). */
+.install-prompt button {
+  background: var(--toner);
+  border-color: var(--toner);
+  color: var(--paper);
+}
+
+.install-prompt button.secondary {
+  background: transparent;
+  color: var(--toner);
+}
+
+@media (prefers-contrast: more) {
+  .install-prompt {
+    transform: translateX(-50%);
+  }
+}
+
 /* Forms: submit, edit, crew and contact pages. Sections 9, 10.4, 14. */
 h1 {
   font-family: var(--font-display);

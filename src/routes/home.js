@@ -23,7 +23,10 @@ export async function handleHome(request, env) {
 
   const { body } = homePage(results);
 
-  const page = String(layout({ path: new URL(request.url).pathname, title: null, bodyContent: body, bodyClass: 'page-home' }));
+  // The install notice's script, home page only (see installPrompt in
+  // templates/home.js). Deferred, so it never holds up the board.
+  const extraHead = '<script src="/js/install-prompt.js" defer></script>';
+  const page = String(layout({ path: new URL(request.url).pathname, title: null, bodyContent: body, bodyClass: 'page-home', extraHead }));
 
   return new Response(page, {
     headers: {

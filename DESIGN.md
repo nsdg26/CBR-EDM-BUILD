@@ -84,7 +84,7 @@ face.
 |---|---|---|
 | `--radius` | `0` | No rounded corners anywhere, per the banned list |
 | `--rotation-max` | `1.5deg` | Seeded per event ID (SPEC.md section 13.5), never randomised on every render |
-| `--shadow` | none (flat) | Depth comes from paste-stain overlays and toner edge darkening, drawn as textures, not `box-shadow` blur |
+| `--shadow` | none (flat) | Depth comes from paste-stain overlays and toner edge darkening, drawn as textures, not `box-shadow` blur. One exception: the home page's install notice floats over the board, so it gets a hard, unblurred offset edge to separate it from the card underneath |
 | `--tape-width` | `28px` | Corner and edge tape marks on scraps |
 
 Torn edges are `clip-path` polygons seeded from the event ID, generated at
