@@ -1,6 +1,6 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { html } from '../../lib/escape.js';
-import { notFound } from '../../lib/http.js';
+import { adminNotFound } from './notFound.js';
 import { formatShortDate } from '../../lib/dates.js';
 
 function page(admin, body) {
@@ -32,7 +32,7 @@ export async function handleContactMessageList(request, env, admin) {
 
 export async function handleContactMessageMarkDone(request, env, admin, id) {
   const msg = await env.DB.prepare('SELECT id FROM contact_messages WHERE id = ?').bind(id).first();
-  if (!msg) return notFound();
+  if (!msg) return adminNotFound(admin);
 
   await env.DB.prepare("UPDATE contact_messages SET state = 'done' WHERE id = ?").bind(id).run();
   return Response.redirect(new URL('/admin/contact-messages', request.url), 303);

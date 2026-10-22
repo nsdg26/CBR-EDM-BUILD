@@ -1,7 +1,7 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { harmReductionAdminPage } from '../../templates/admin/harmReduction.js';
 import { generateId } from '../../lib/ids.js';
-import { notFound } from '../../lib/http.js';
+import { adminNotFound } from './notFound.js';
 import { getSetting, setSetting } from '../../lib/settings.js';
 import { HARM_REDUCTION_INTRO_KEY, HARM_REDUCTION_INTRO_DEFAULT } from '../harmReduction.js';
 
@@ -55,7 +55,7 @@ export async function handleHarmReductionCreate(request, env, admin) {
 
 export async function handleHarmReductionUpdate(request, env, admin, id) {
   const link = await env.DB.prepare('SELECT id, last_checked_at FROM harm_reduction_links WHERE id = ?').bind(id).first();
-  if (!link) return notFound();
+  if (!link) return adminNotFound(admin);
 
   const formData = await request.formData();
   const fields = readLinkFields(formData);

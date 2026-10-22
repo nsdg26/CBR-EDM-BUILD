@@ -12,6 +12,8 @@ function fakeDb({ crews, events }) {
         bind(...args) {
           return {
             async first() {
+              // requireCrew's wrong-key limit: nothing counted yet.
+              if (sql.startsWith('SELECT count FROM rate_limits')) return null;
               if (sql.startsWith('SELECT * FROM crews WHERE key_hash = ?')) {
                 return crews.find((c) => c.key_hash === args[0]) || null;
               }

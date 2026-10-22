@@ -2,12 +2,14 @@ import { layout } from '../templates/layout.js';
 import { crewDashboardPage } from '../templates/crew.js';
 import { hashToken } from '../lib/tokens.js';
 import {
-  readEventFields, validateEventFields, asFormDataLike, pickFields, locationRevealedAtFor, isHttpUrl, CREW_EDIT_FIELDS,
+  readEventFields, validateEventFields, publishedFieldErrors, asFormDataLike, pickFields, locationRevealedAtFor, isHttpUrl,
+  CREW_EDIT_FIELDS,
 } from '../lib/eventFields.js';
 import { utcToCanberraLocalInput } from '../lib/dates.js';
-import { generateId, eventSlugFor } from '../lib/ids.js';
+import { generateId } from '../lib/ids.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
-import { checkRateLimit } from '../lib/rateLimit.js';
+import { checkRateLimit, rateLimitExceeded } from '../lib/rateLimit.js';
+import { insertEventWithSlug } from '../lib/eventInsert.js';
 import { sendAdminAlert } from '../lib/email.js';
 import { recordCount } from '../lib/analytics.js';
 import { render } from '../flyers/index.js';
@@ -17,7 +19,15 @@ import { freezeFlyerTemplate } from './admin/events.js';
 import { terrainFieldsFor } from '../lib/geocode.js';
 
 const TURNSTILE_SCRIPT = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
-const NO_STORE_HEADERS = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
+// Section 12: no referrer from the dashboard, the same as the edit page.
+const NO_STORE_HEADERS = {
+  'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', 'Referrer-Policy': 'no-referrer',
+};
+
+// Wrong crew keys allowed per client per day, section 9.4. Only misses
+// count: the dashboard re-checks its stored key on every page load, and
+// counting those locked a crew out of its own dashboard after ten loads.
+const CREW_KEY_FAILURE_LIMIT = 10;
 
 export async function handleCrewPage(request, env) {
   const body = crewDashboardPage(env.TURNSTILE_SITE_KEY);
@@ -36,10 +46,22 @@ async function readJson(request) {
   return request.json().catch(() => ({}));
 }
 
+/**
+ * The crew a request's key belongs to, or null. Every crew endpoint goes
+ * through here, so the wrong-key limit applies to all of them, not only
+ * to sign-in: a client already over it is refused without a lookup, and
+ * a miss counts against it.
+ * @param {Request} request
+ * @param {import('../env.js').Env} env
+ * @param {{ key?: unknown }} body
+ */
 async function requireCrew(request, env, body) {
-  if (!body.key) return null;
+  if (typeof body.key !== 'string' || !body.key) return null;
+  if (await rateLimitExceeded(request, env, 'crew_key', CREW_KEY_FAILURE_LIMIT)) return null;
   const keyHash = await hashToken(body.key);
-  return env.DB.prepare('SELECT * FROM crews WHERE key_hash = ?').bind(keyHash).first();
+  const crew = await env.DB.prepare('SELECT * FROM crews WHERE key_hash = ?').bind(keyHash).first();
+  if (!crew) await checkRateLimit(request, env, 'crew_key', CREW_KEY_FAILURE_LIMIT);
+  return crew;
 }
 
 /**
@@ -48,8 +70,9 @@ async function requireCrew(request, env, body) {
  * than the page re-checking a stored key), verified against it.
  */
 export async function handleCrewLogin(request, env) {
-  const allowed = await checkRateLimit(request, env, 'crew_key', 10);
-  if (!allowed) return jsonResponse({ ok: false, error: 'Too many attempts today. Try again tomorrow.' }, 429);
+  if (await rateLimitExceeded(request, env, 'crew_key', CREW_KEY_FAILURE_LIMIT)) {
+    return jsonResponse({ ok: false, error: 'Too many attempts today. Try again tomorrow.' }, 429);
+  }
 
   const body = await readJson(request);
   if (body.turnstileToken) {
@@ -136,10 +159,9 @@ export async function handleCrewEventCreate(request, env) {
   const willPublish = Boolean(crew.trusted && fields.title && fields.start_at);
   const now = new Date().toISOString();
   const id = generateId('evt');
-  const slug = eventSlugFor(fields.title, fields.start_at);
   const terrain = await terrainFieldsFor(fields);
 
-  await env.DB.prepare(
+  await insertEventWithSlug((slug) => env.DB.prepare(
     `INSERT INTO events (id, slug, title, crew_id, start_at, end_at, venue_name, venue_address, genres,
        lineup, lineup_equal_billing, ticket_url, notes, age_restriction, status, visibility, source, sequence,
        created_at, updated_at, published_at, flyer_template, location_tba, venue_lat, venue_lng, elevation_grid)
@@ -149,7 +171,7 @@ export async function handleCrewEventCreate(request, env) {
     fields.genres, fields.lineup, fields.lineup_equal_billing, fields.ticket_url, fields.notes, fields.age_restriction,
     willPublish ? 'published' : 'pending', willPublish ? 1 : 0, now, now, willPublish ? now : null, flyerTemplate,
     fields.location_tba, terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid,
-  ).run();
+  ), fields.title, fields.start_at);
 
   await recordCount(env, 'submission', 'crew');
 
@@ -187,6 +209,10 @@ export async function handleCrewFlyerPreview(request, env) {
   if (!crew) return jsonResponse({ ok: false, error: 'Not signed in.' }, 401);
 
   const fields = readEventFields(asFormDataLike(body));
+  // The same limits a save enforces, so a preview can't be asked to lay
+  // out a lineup far longer than any event could ever store.
+  const errors = validateEventFields(fields);
+  if (errors.length) return jsonResponse({ ok: false, error: errors[0] }, 400);
   const event = {
     ...fields,
     presented_by: fields.presented_by || crew.name,
@@ -300,7 +326,7 @@ export async function handleCrewEventUpdate(request, env, id) {
     lineup_equal_billing: event.lineup_equal_billing ? '1' : '',
     ...body,
   }));
-  const errors = validateEventFields(fields);
+  const errors = [...validateEventFields(fields), ...publishedFieldErrors(event, fields)];
   if (errors.length) return jsonResponse({ ok: false, error: errors[0] }, 400);
 
   const now = new Date().toISOString();

@@ -1,7 +1,7 @@
 import { layout } from '../templates/layout.js';
 import { calendarPage } from '../templates/calendarPage.js';
 import { currentCanberraMonth, canberraLocalInputToUtc } from '../lib/dates.js';
-import { recordCount, isBotRequest } from '../lib/analytics.js';
+import { countInBackground, isBotRequest } from '../lib/analytics.js';
 
 /**
  * GET /calendar and GET /calendar?month=YYYY-MM. The month grid on its
@@ -11,7 +11,7 @@ import { recordCount, isBotRequest } from '../lib/analytics.js';
  * @param {Request} request
  * @param {import('../env.js').Env} env
  */
-export async function handleCalendarPage(request, env) {
+export async function handleCalendarPage(request, env, ctx) {
   const url = new URL(request.url);
   const { year, month } = parseMonthParam(url.searchParams.get('month'));
 
@@ -33,7 +33,7 @@ export async function handleCalendarPage(request, env) {
      ORDER BY start_at`,
   ).bind(fromUtc, toUtc).all();
 
-  if (!isBotRequest(request)) await recordCount(env, 'calendar_view');
+  if (!isBotRequest(request)) await countInBackground(ctx, env, 'calendar_view');
 
   const body = String(calendarPage(results, year, month));
   const page = String(layout({ path: new URL(request.url).pathname, title: 'Calendar', bodyContent: body }));

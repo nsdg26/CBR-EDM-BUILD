@@ -1,7 +1,8 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { inboundEmailListPage, inboundEmailViewPage } from '../../templates/admin/inboundEmails.js';
-import { generateId, eventSlugFor } from '../../lib/ids.js';
-import { notFound } from '../../lib/http.js';
+import { generateId } from '../../lib/ids.js';
+import { insertEventWithSlug } from '../../lib/eventInsert.js';
+import { adminNotFound } from './notFound.js';
 
 function page(admin, title, body) {
   return new Response(String(adminLayout({ title, bodyContent: body, email: admin.email, path: admin.path, siteOrigin: admin.siteOrigin })), {
@@ -16,7 +17,7 @@ export async function handleInboundEmailList(request, env, admin) {
 
 export async function handleInboundEmailView(request, env, admin, id) {
   const emailRow = await env.DB.prepare('SELECT * FROM inbound_emails WHERE id = ?').bind(id).first();
-  if (!emailRow) return notFound();
+  if (!emailRow) return adminNotFound(admin);
   return page(admin, emailRow.subject || 'Inbound email', inboundEmailViewPage(emailRow));
 }
 
@@ -25,11 +26,11 @@ export async function handleInboundEmailView(request, env, admin, id) {
  * attachments are stored raw in R2 but never served publicly; this route
  * is admin-only (gated by the admin router itself).
  */
-export async function handleInboundEmailAttachment(request, env, id, index) {
+export async function handleInboundEmailAttachment(request, env, admin, id, index) {
   const emailRow = await env.DB.prepare('SELECT attachments_json FROM inbound_emails WHERE id = ?').bind(id).first();
-  if (!emailRow) return notFound();
+  if (!emailRow) return adminNotFound(admin);
 
-  const attachments = JSON.parse(emailRow.attachments_json || '[]');
+  const attachments = parseAttachments(emailRow.attachments_json);
   const attachment = attachments[Number(index)];
   if (!attachment) return new Response('Not found', { status: 404 });
 
@@ -52,12 +53,37 @@ export async function handleInboundEmailAttachment(request, env, id, index) {
   });
 }
 
+/**
+ * POST /admin/inbound-emails/:id/dismiss. A dismissed email's attachments
+ * are deleted from R2 too: nothing will ever show them again, and the
+ * bucket otherwise keeps every image ever sent to the address.
+ */
 export async function handleInboundEmailDismiss(request, env, admin, id) {
-  const emailRow = await env.DB.prepare('SELECT id FROM inbound_emails WHERE id = ?').bind(id).first();
-  if (!emailRow) return notFound();
+  const emailRow = await env.DB.prepare('SELECT id, attachments_json FROM inbound_emails WHERE id = ?').bind(id).first();
+  if (!emailRow) return adminNotFound(admin);
 
-  await env.DB.prepare("UPDATE inbound_emails SET state = 'dismissed' WHERE id = ?").bind(id).run();
+  const attachments = parseAttachments(emailRow.attachments_json);
+  const keys = attachments.map((attachment) => attachment.r2_key).filter(Boolean);
+  if (keys.length) {
+    try {
+      await env.FLYERS.delete(keys);
+    } catch (err) {
+      // The dismissal still goes through; a stray object is only storage.
+      console.error(`Could not delete attachments for ${id}`, err);
+    }
+  }
+
+  await env.DB.prepare("UPDATE inbound_emails SET state = 'dismissed', attachments_json = '[]' WHERE id = ?").bind(id).run();
   return Response.redirect(new URL('/admin/inbound-emails', request.url), 303);
+}
+
+function parseAttachments(json) {
+  try {
+    const parsed = JSON.parse(json || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -65,25 +91,30 @@ export async function handleInboundEmailDismiss(request, env, admin, id) {
  * form pre-filled (subject as title). The first image attachment, if any,
  * is shown for reference on the event edit page -- the flyer itself is
  * always the generated contour map, owner request: uploads are gone.
+ *
+ * The sender's address goes into submitter_contact, the private field
+ * the admin form shows and nothing public ever renders. It used to be
+ * written into the notes, which are published with the event, so an
+ * email converted and published as-is put the sender's address on the
+ * public event page (section 12).
  */
 export async function handleInboundEmailConvert(request, env, admin, id) {
   const emailRow = await env.DB.prepare('SELECT * FROM inbound_emails WHERE id = ?').bind(id).first();
-  if (!emailRow) return notFound();
+  if (!emailRow) return adminNotFound(admin);
 
   const now = new Date().toISOString();
   const eventId = generateId('evt');
-  const slug = eventSlugFor(emailRow.subject, null);
-  const notes = `Converted from an email sent by ${emailRow.from_address}.`;
+  const submitterContact = emailRow.from_address ? `Emailed from ${emailRow.from_address}`.slice(0, 300) : null;
 
-  await env.DB.prepare(
-    `INSERT INTO events (id, slug, title, notes, age_restriction, status, visibility, source, sequence, created_at, updated_at)
+  await insertEventWithSlug((slug) => env.DB.prepare(
+    `INSERT INTO events (id, slug, title, submitter_contact, age_restriction, status, visibility, source, sequence, created_at, updated_at)
      VALUES (?, ?, ?, ?, 'unknown', 'on', 'pending', 'admin', 0, ?, ?)`,
-  ).bind(eventId, slug, emailRow.subject || null, notes, now, now).run();
+  ).bind(eventId, slug, emailRow.subject || null, submitterContact, now, now), emailRow.subject, null);
 
   await env.DB.prepare("UPDATE inbound_emails SET state = 'converted', event_id = ? WHERE id = ?")
     .bind(eventId, id).run();
 
-  const attachments = JSON.parse(emailRow.attachments_json || '[]');
+  const attachments = parseAttachments(emailRow.attachments_json);
   const redirectUrl = new URL(`/admin/events/${eventId}/edit`, request.url);
   if (attachments.length) redirectUrl.searchParams.set('from_email', id);
 

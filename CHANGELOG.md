@@ -5,7 +5,84 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Security
+- Admin form posts are refused unless they come from the admin itself
+  (`Sec-Fetch-Site: same-origin`, or an `Origin` matching the request).
+  The Access sign-in cookie is sent on cross-site requests by default, so
+  a hidden form on another site could have deleted an event or rotated a
+  crew key while the admin was signed in. README step 10 also asks for
+  the application's SameSite attribute to be set to Lax.
+- `DEV_BYPASS_ACCESS` only opens the admin on a local hostname, so the
+  variable reaching a deployed Worker by mistake opens nothing.
+- `RATE_LIMIT_SALT` is a random value rather than the placeholder it
+  shipped with, so the hashed IPs in `rate_limits` can't be reversed from
+  a database export.
+- Converting an inbound email put the sender's address into the event's
+  notes, which are published with the event. It goes into the private
+  submitter contact field instead.
+- The Content Security Policy adds `base-uri`, `object-src` and
+  `form-action`; HTML responses carry `Strict-Transport-Security`. The
+  edit and crew pages' `no-referrer` policy is no longer overwritten by
+  the shared header code.
+- The Access token's issuer is matched exactly, not as a substring; `nbf`
+  is checked; an unknown key id can force a certs refetch at most once a
+  minute.
+- The Worker no longer answers on its `*.workers.dev` address
+  (`workers_dev: false`), which sat outside Access and Turnstile.
+
 ### Fixed
+- Crews locked themselves out of the dashboard: it re-checks the stored
+  key on every page load, and every check counted against the ten-a-day
+  crew key limit, so ten page loads from one connection (or two people on
+  one network) meant a day's lockout, on the public submit form's crew
+  key too. Only wrong keys count now, on every crew endpoint.
+- A failed analytics write (a D1 outage, or the free tier's daily write
+  quota under a crawler that doesn't call itself a bot) turned every
+  public page into a 500. Counts are logged on failure and never block a
+  page; with the Worker's execution context they run after the response.
+- A geocoder outage or timeout read as "we couldn't find that venue" and
+  refused every public submission with an address for as long as it
+  lasted. An unanswered lookup now lets the submission through unchecked
+  (it is reviewed before publishing anyway); only a real "no match" still
+  refuses. Geocoder calls from the public forms are capped site-wide at
+  30 a minute, under Nominatim's usage policy whatever the forms are
+  asked to do.
+- An approved edit-link change, a trusted crew's save or the admin form
+  could clear a published event's title or start date; the event then sat
+  at the top of "Coming up" with no date forever. Each refuses that now,
+  and approving a queued edit keeps the live title and start if the
+  proposal blanked them.
+- The admin event and crew forms skipped validation: an out-of-range
+  status, an over-length field, a duplicate or unusable crew slug all
+  failed inside D1 as a 500. They show the error on the form instead, and
+  a crew's slug is always a slug.
+- Two events with the same title on the same day could collide on their
+  slug (about one in 65,000) and fail as a 500 after the Turnstile check.
+  The insert retries with a fresh suffix.
+- A number, object or array in a JSON field of the crew or venue-check
+  APIs threw inside `.trim()` as a 500. Values are coerced to strings or
+  treated as absent.
+- Admin "not found" pages wore the public site's chrome and were marked
+  publicly cacheable; they have their own page and are `no-store`.
+- The build id replaced the first `CF_VERSION_ID` anywhere in a page, so
+  a note containing that text took the id and the footer didn't. The
+  whole footer marker is matched.
+- The contact and submit forms spent the single-use Turnstile token
+  before checking the fields, so a "message is required" cost the visitor
+  a second check. Fields are checked first.
+- An unhandled error in any route surfaced as the runtime's bare
+  "Internal Server Error"; it is logged and shown as the site's own page.
+
+### Changed
+- The home page loads the events that could still be coming up plus the
+  most recent past ones, rather than every published event ever (terrain
+  grids and all) before keeping twelve. The archive index reads only
+  dates, and a year page only that year.
+- A nightly cron trigger deletes `rate_limits` rows older than two days.
+- Inbound email: attachments over 5 MB are not stored, at most 50 emails
+  a day are, and dismissing an email deletes its attachments from R2.
+- A crew's flyer preview is checked against the same field limits as a
+  save, so it can't be asked to lay out a lineup no event could store.
 - Long headliner and venue names ran off the edges of the generated
   flyer: both were drawn at a fixed size with no width check. They now
   wrap and shrink to fit (flyer engine 0.13.0), and a test measures every

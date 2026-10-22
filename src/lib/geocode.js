@@ -11,6 +11,8 @@
 // Elevation: OpenTopoData's public srtm30m endpoint (SRTM, ~30m
 // resolution), free, no key, single batched request per lookup.
 
+import { checkGlobalRateLimit } from './rateLimit.js';
+
 const GRID_SIZE = 9;
 const GRID_SPACING_METERS = 150;
 const METERS_PER_DEGREE_LAT = 111320;
@@ -32,14 +34,34 @@ const CANBERRA_VIEWBOX = '148.65,-35.05,149.45,-35.55';
 // returning nothing, and "the middle of Canberra" is not a venue.
 const MIN_SPECIFIC_PLACE_RANK = 20;
 
+// Calls to Nominatim per minute across the whole site. Its usage policy
+// asks for no more than one request a second from an application; this
+// stays well under it however many visitors are typing addresses at
+// once, and a busier minute reads as "service unavailable" (fail open,
+// below) rather than a ban that would read as "every address is wrong".
+const GEOCODE_CALLS_PER_MINUTE = 30;
+
 /**
+ * Geocodes a venue, saying why when it can't: a place that doesn't exist
+ * and a service that didn't answer used to both come back as null, so an
+ * outage at a community-run service rejected every public submission
+ * with a venue as "we couldn't find that address".
  * @param {string|null} venueName
  * @param {string|null} venueAddress
- * @returns {Promise<{ lat: number, lng: number }|null>}
+ * @param {import('../env.js').Env} [env] - when given, the site-wide
+ *   per-minute cap applies (public forms); omit for an admin action
+ * @returns {Promise<{ status: 'found', location: { lat: number, lng: number } }
+ *   | { status: 'not_found' | 'unavailable', location: null }>}
  */
-export async function geocodeVenue(venueName, venueAddress) {
+export async function geocodeVenueDetailed(venueName, venueAddress, env) {
   const primary = venueAddress || venueName;
-  if (!primary) return null;
+  if (!primary) return { status: 'not_found', location: null };
+
+  if (env) {
+    const allowed = await checkGlobalRateLimit(env, 'geocode', GEOCODE_CALLS_PER_MINUTE, 'minute').catch(() => true);
+    if (!allowed) return { status: 'unavailable', location: null };
+  }
+
   // Just the country, not "Canberra, ACT" -- CANBERRA_VIEWBOX already
   // covers the NSW region around Canberra (bush doof venues are often
   // just over the border), and forcing "ACT" into the query text
@@ -55,22 +77,35 @@ export async function geocodeVenue(venueName, venueAddress) {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { status: 'unavailable', location: null };
 
     const results = await response.json();
-    const first = results[0];
-    if (!first) return null;
+    const first = Array.isArray(results) ? results[0] : null;
+    if (!first) return { status: 'not_found', location: null };
     // Reject a match too coarse to be an actual venue (see
     // MIN_SPECIFIC_PLACE_RANK above) -- a bogus or made-up address
     // shouldn't quietly become "somewhere in Canberra", which would
     // then draw a confident-looking real contour map for a venue that
     // was never actually geocoded.
-    if (typeof first.place_rank === 'number' && first.place_rank < MIN_SPECIFIC_PLACE_RANK) return null;
+    if (typeof first.place_rank === 'number' && first.place_rank < MIN_SPECIFIC_PLACE_RANK) {
+      return { status: 'not_found', location: null };
+    }
 
-    return { lat: Number(first.lat), lng: Number(first.lon) };
+    return { status: 'found', location: { lat: Number(first.lat), lng: Number(first.lon) } };
   } catch {
-    return null;
+    return { status: 'unavailable', location: null };
   }
+}
+
+/**
+ * @param {string|null} venueName
+ * @param {string|null} venueAddress
+ * @returns {Promise<{ lat: number, lng: number }|null>} the location, or
+ *   null whether it wasn't found or couldn't be looked up (see
+ *   geocodeVenueDetailed to tell those apart)
+ */
+export async function geocodeVenue(venueName, venueAddress) {
+  return (await geocodeVenueDetailed(venueName, venueAddress)).location;
 }
 
 /**
@@ -148,13 +183,19 @@ export async function fetchRealTerrain(venueName, venueAddress, precomputedLocat
  * check, `location` is handed back so the caller can pass it straight into
  * terrainFieldsFor and avoid geocoding the same address twice.
  * @param {{ location_tba: boolean|number, venue_name: string|null, venue_address: string|null }} fields
+ * @param {import('../env.js').Env} [env] - applies the site-wide geocoder cap
  */
-export async function checkVenueRealness(fields) {
+export async function checkVenueRealness(fields, env) {
   if (fields.location_tba) return { skip: true };
   if (!fields.venue_name && !fields.venue_address) return { skip: true };
 
-  const location = await geocodeVenue(fields.venue_name, fields.venue_address);
-  return { skip: false, ok: Boolean(location), location };
+  const { status, location } = await geocodeVenueDetailed(fields.venue_name, fields.venue_address, env);
+  // `unavailable` means the geocoder didn't answer (timeout, error, or
+  // the site-wide cap): that is not the visitor's fault, so callers let
+  // the submission through unchecked rather than blocking every
+  // submission for as long as the outage lasts. A public submission is
+  // reviewed by the admin before it's published anyway.
+  return { skip: false, ok: status === 'found', unavailable: status === 'unavailable', location };
 }
 
 /**

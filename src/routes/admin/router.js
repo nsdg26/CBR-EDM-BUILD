@@ -1,4 +1,5 @@
 import { requireAdmin } from '../../lib/auth.js';
+import { adminNotFound } from './notFound.js';
 import { isAdminHost, publicOriginFor } from '../../lib/hosts.js';
 import { handleAdminQueue } from './queue.js';
 import {
@@ -22,6 +23,29 @@ import {
 } from './inboundEmails.js';
 
 /**
+ * Cross-site request forgery guard for the admin's forms. Every admin
+ * write is a plain form POST, and the Access session cookie is sent on
+ * cross-site requests by default (its SameSite attribute is "None"
+ * unless changed in the Access application), so a hidden form on any
+ * other site could delete an event or rotate a crew key while the admin
+ * is signed in. A browser's own form posts carry Sec-Fetch-Site
+ * (same-origin) and Origin (this origin); anything else is refused.
+ * Reads are unaffected.
+ * @param {Request} request
+ * @param {URL} url
+ */
+export function isCrossSiteWrite(request, url) {
+  if (request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') return false;
+  const site = request.headers.get('Sec-Fetch-Site');
+  if (site) return site !== 'same-origin' && site !== 'none';
+  const origin = request.headers.get('Origin');
+  if (origin) return origin !== url.origin;
+  // Neither header: not a browser form post, or an old browser. Refuse
+  // rather than guess; the admin is only ever used from a browser.
+  return true;
+}
+
+/**
  * Handles every /admin* and /admin/api* route. Section 10.1: Access
  * protects these paths at the edge, but the Worker independently verifies
  * the JWT and rejects the request if that verification fails, even if
@@ -38,6 +62,10 @@ export async function adminRouter(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+
+  if (isCrossSiteWrite(request, url)) {
+    return new Response('Forbidden: cross-site request', { status: 403, headers: { 'Cache-Control': 'no-store' } });
+  }
   // Carried on the admin object every handler already receives, so the
   // shell can mark the current nav link without threading the request
   // through each page helper.
@@ -107,7 +135,7 @@ export async function adminRouter(request, env) {
 
   const inboundEmailAttachment = path.match(/^\/admin\/api\/inbound-emails\/([^/]+)\/attachments\/(\d+)$/);
   if (inboundEmailAttachment && method === 'GET') {
-    return handleInboundEmailAttachment(request, env, inboundEmailAttachment[1], inboundEmailAttachment[2]);
+    return handleInboundEmailAttachment(request, env, admin, inboundEmailAttachment[1], inboundEmailAttachment[2]);
   }
 
   const inboundEmailAction = path.match(/^\/admin\/inbound-emails\/([^/]+)\/(dismiss|convert)$/);
@@ -119,5 +147,5 @@ export async function adminRouter(request, env) {
   const inboundEmailView = path.match(/^\/admin\/inbound-emails\/([^/]+)$/);
   if (inboundEmailView && method === 'GET') return handleInboundEmailView(request, env, admin, inboundEmailView[1]);
 
-  return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  return adminNotFound(admin);
 }
