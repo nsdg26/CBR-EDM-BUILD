@@ -1,0 +1,80 @@
+# Keeps nic-st/cbrdance (the repo Cloudflare Workers Builds deploys from)
+# in step with nsdg26/CBR-EDM-BUILD (where Claude Code builds and fixes).
+#
+# This file belongs in nic-st/cbrdance at .github/workflows/sync-from-build.yml.
+# It is kept here, in the build repo, because that is where Claude can edit
+# it; copy it across whenever it changes. Setup is in
+# scripts/CBRDANCE-SYNC-SETUP.md next to it.
+#
+# What it does: fetch main from the build repo and fast-forward this repo's
+# main to it, then push. Workers Builds sees the push and deploys. Nothing
+# is ever force-pushed: if this repo's main has a commit the build repo
+# doesn't, the run fails and says so, and nothing moves until someone sorts
+# it out by hand (same guard the old desktop script had).
+#
+# Runs every hour and whenever the "Run workflow" button is pressed on the
+# Actions tab, which is the "deploy now" button after a merge in the build
+# repo.
+
+name: Sync from CBR-EDM-BUILD
+
+on:
+  schedule:
+    # Hourly, at 23 past, so it never lands on the hour with everyone else's.
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+# Two runs at once (a scheduled one landing while a manual one is going)
+# would race on the push; the later one waits.
+concurrency:
+  group: sync-from-build
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out cbrdance main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          # The push below uses the job token explicitly; keeping the
+          # checkout's own credential in .git/config as well would send two
+          # Authorization headers on the fetch from the build repo.
+          persist-credentials: false
+
+      - name: Fetch main from the build repo
+        env:
+          # A fine-grained token made on the nsdg26 account, limited to the
+          # CBR-EDM-BUILD repository with Contents: read only. See the setup
+          # note. Actions masks it in the log if git ever prints the URL.
+          UPSTREAM_READ_TOKEN: ${{ secrets.UPSTREAM_READ_TOKEN }}
+          GIT_TERMINAL_PROMPT: '0'
+        run: |
+          if [ -z "$UPSTREAM_READ_TOKEN" ]; then
+            echo "::error::The UPSTREAM_READ_TOKEN secret is not set. See scripts/CBRDANCE-SYNC-SETUP.md in the build repo."
+            exit 1
+          fi
+          git fetch --no-tags "https://x-access-token:${UPSTREAM_READ_TOKEN}@github.com/nsdg26/CBR-EDM-BUILD.git" main
+          echo "Build repo main is at $(git rev-parse --short FETCH_HEAD); this repo's main is at $(git rev-parse --short HEAD)."
+
+      - name: Fast-forward main and push
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+            echo "Already up to date. Nothing to deploy."
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "::error::cbrdance main has commits that are not in CBR-EDM-BUILD main, so it cannot be fast-forwarded. Merge or move those commits by hand (see scripts/sync-to-cbrdance.sh in the build repo), then run this again."
+            git log --oneline FETCH_HEAD..HEAD
+            exit 1
+          fi
+          git merge --ff-only FETCH_HEAD
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          echo "Pushed. Workers Builds will pick this up and deploy."

@@ -14,23 +14,30 @@ This project lives across two GitHub repos and two accounts, on purpose:
   it instead (so the fork relationship doesn't reflect current access).
 
 **Workflow:** build and fix things here via Claude on `nsdg26/CBR-EDM-BUILD`
-as normal. The owner then moves those changes across to `nic-st/cbrdance`
-themselves (their desktop has separate local clones of each) -- that
-second step is manual and outside this session. Pushing to
-`nsdg26/CBR-EDM-BUILD`'s `main` does **not** by itself deploy anything;
-nothing is live until it also reaches `nic-st/cbrdance`.
+as normal. A GitHub Actions workflow in `nic-st/cbrdance` then pulls this
+repo's `main` into its own `main` (hourly, or on demand from the Actions
+tab's "Run workflow" button) and Cloudflare deploys from there. The
+workflow file is kept here as `scripts/cbrdance-sync.yml` so Claude can
+edit it; the owner copies it into `.github/workflows/` in `cbrdance`
+whenever it changes. Setup, including the one read-only token it needs,
+is in `scripts/CBRDANCE-SYNC-SETUP.md`. Pushing to `nsdg26/CBR-EDM-BUILD`'s
+`main` does **not** by itself deploy anything; nothing is live until the
+sync has carried it to `nic-st/cbrdance`.
 
 A Claude Code session can only work with repos under one GitHub account at
-a time (no cross-account access in a single session), so this session
-cannot see or push to `nic-st/cbrdance` directly -- that would need a
-separate session started with `nic-st/cbrdance` as its source.
+a time (no cross-account access in a single session), and the owner keeps
+the personal account out of Claude on purpose, so no session can see or
+push to `nic-st/cbrdance`. Anything that has to change there is written
+here and copied across by the owner.
 
-`scripts/sync-to-cbrdance.sh` does the actual moving-across step: run it
-locally inside the `CBRDANCE` desktop folder to pull `nsdg26`'s `main`
-into `nic-st/cbrdance`'s `main` and push it. It also fixes the common
-failure mode where that folder's `origin` remote got pointed at the
-`nsdg26` repo instead of `nic-st/cbrdance` (which is what makes GitHub
-Desktop conflate the two folders and refuse to push).
+`scripts/sync-to-cbrdance.sh` is the older, manual way: run it locally
+inside the `CBRDANCE` desktop folder to pull `nsdg26`'s `main` into
+`nic-st/cbrdance`'s `main` and push it. Kept for the one case the
+workflow refuses, a commit made directly in `cbrdance` that has to be
+merged by hand. It also fixes the common failure mode where that
+folder's `origin` remote got pointed at the `nsdg26` repo instead of
+`nic-st/cbrdance` (which is what makes GitHub Desktop conflate the two
+folders and refuse to push).
 
 # Domains
 
