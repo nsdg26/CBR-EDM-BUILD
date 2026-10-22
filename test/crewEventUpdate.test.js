@@ -19,6 +19,8 @@ async function setup(eventOverrides = {}) {
         bind(...args) {
           return {
             async first() {
+              // requireCrew's wrong-key limit: nothing counted yet.
+              if (sql.startsWith('SELECT count FROM rate_limits')) return null;
               if (sql.startsWith('SELECT * FROM crews WHERE key_hash = ?')) return args[0] === crew.key_hash ? crew : null;
               if (sql.includes('FROM events LEFT JOIN crews')) return { ...event, crew_name: crew.name };
               throw new Error(`unhandled first(): ${sql}`);
@@ -57,7 +59,25 @@ test("a crew edit keeps the event's age restriction, TBA and equal billing, whic
 
 test('a crew edit that does send age_restriction still changes it', async () => {
   const { env, key, runs } = await setup();
-  await handleCrewEventUpdate(request({ key, title: 'Deep Signal', age_restriction: 'all_ages' }), env, 'evt_1');
+  await handleCrewEventUpdate(request({ key, title: 'Deep Signal', start_at_local: '2026-10-03T22:00', age_restriction: 'all_ages' }), env, 'evt_1');
   const update = runs.find((r) => r.sql.startsWith('UPDATE events SET title'));
   assert.ok(update.args.includes('all_ages'));
+});
+
+test('a crew edit cannot blank the title or start of a published event', async () => {
+  const { env, key, runs } = await setup();
+  const response = await handleCrewEventUpdate(request({ key, title: '', start_at_local: '2026-10-03T22:00' }), env, 'evt_1');
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /needs a title/);
+  assert.equal(runs.length, 0);
+
+  const noStart = await handleCrewEventUpdate(request({ key, title: 'Deep Signal', start_at_local: '' }), env, 'evt_1');
+  assert.equal(noStart.status, 400);
+});
+
+test('a pending event can still be saved without a start, as before', async () => {
+  const { env, key, runs } = await setup({ visibility: 'pending' });
+  const response = await handleCrewEventUpdate(request({ key, title: 'Deep Signal', start_at_local: '' }), env, 'evt_1');
+  assert.equal(response.status, 200);
+  assert.ok(runs.some((r) => r.sql.startsWith('UPDATE events SET title')));
 });

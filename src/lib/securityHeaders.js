@@ -21,7 +21,17 @@ const CSP = [
   "connect-src 'self' https://cloudflareinsights.com https://challenges.cloudflare.com",
   "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
+  // Nothing on the site uses <base>, plugins or a form that posts
+  // elsewhere, so an injected one is simply refused.
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'",
 ].join('; ');
+
+// The footer comment layout.js leaves in every page, filled in here with
+// the deployment id. The whole marker is matched, not the bare id, so a
+// title or note that happens to contain the id's text is left alone.
+const BUILD_MARKER = '<!-- build:CF_VERSION_ID -->';
 
 /**
  * @param {Response} response
@@ -35,8 +45,14 @@ export async function withSecurityHeaders(response, options = {}, env) {
   const headers = new Headers(response.headers);
   headers.set('Content-Security-Policy', CSP);
   headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('Referrer-Policy', options.noReferrer ? 'no-referrer' : 'strict-origin-when-cross-origin');
+  // A route that has already chosen its own policy (no-referrer on the
+  // edit and crew pages, section 12) keeps it; this used to overwrite it.
+  if (options.noReferrer) headers.set('Referrer-Policy', 'no-referrer');
+  else if (!headers.has('Referrer-Policy')) headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=()');
+  // Browsers ignore this over plain http, so local wrangler dev is
+  // unaffected; on the real domains it pins https for a year.
+  headers.set('Strict-Transport-Security', 'max-age=31536000');
 
   // layout.js leaves this placeholder in every page; filled in here, in the
   // one place all HTML responses pass through, rather than threading env
@@ -51,7 +67,7 @@ export async function withSecurityHeaders(response, options = {}, env) {
   }
 
   return new Response(
-    (await response.text()).replace('CF_VERSION_ID', buildId),
+    (await response.text()).replace(BUILD_MARKER, `<!-- build:${buildId} -->`),
     { status: response.status, statusText: response.statusText, headers },
   );
 }

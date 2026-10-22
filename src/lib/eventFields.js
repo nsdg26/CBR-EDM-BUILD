@@ -114,12 +114,47 @@ export function isHttpUrl(value) {
 }
 
 /**
+ * A JSON body value as the string a form field would have carried. A
+ * number or boolean is written out; an object, array or anything else is
+ * treated as absent, rather than reaching `.trim()` or a D1 bind as the
+ * wrong type and surfacing as a 500.
+ * @param {unknown} value
+ */
+export function asFieldString(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  if (typeof value === 'boolean') return value ? '1' : '';
+  return null;
+}
+
+/**
  * Wraps a plain object so it can be passed to readEventFields wherever a
  * FormData would normally go (e.g. a JSON request body).
  * @param {object} obj
  */
 export function asFormDataLike(obj) {
-  return { get: (key) => obj[key] };
+  return { get: (key) => asFieldString(obj[key]) };
+}
+
+/**
+ * Section 10.2's rule that a published event has at least a title and a
+ * start date, applied to edits as well as to publishing: a trusted
+ * crew's direct save, an approved edit-link change or the admin form
+ * could clear either on a live event, which then sat at the top of
+ * "Coming up" with no date forever (an event with no start is never
+ * "past"). Only fields the edit actually carries are checked, so a
+ * partial update that leaves the title alone is fine.
+ * @param {{ visibility?: string }} existing
+ * @param {object} fields
+ * @returns {string[]} error strings, empty if fine
+ */
+export function publishedFieldErrors(existing, fields) {
+  if (existing?.visibility !== 'published') return [];
+  const errors = [];
+  if ('title' in fields && !fields.title) errors.push('A published event needs a title.');
+  if ('start_at' in fields && !fields.start_at) errors.push('A published event needs a start date and time.');
+  return errors;
 }
 
 /**

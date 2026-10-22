@@ -1,9 +1,18 @@
 import PostalMime from 'postal-mime';
 import { generateId } from './ids.js';
 import { sendAdminAlert } from './email.js';
+import { checkGlobalRateLimit } from './rateLimit.js';
 
 const MAX_EMAIL_BYTES = 10 * 1024 * 1024;
 const MAX_IMAGE_ATTACHMENTS = 3;
+// A flyer image a crew would email is a few hundred KB; anything bigger
+// than this is not stored (the email itself still is). The address is
+// public, so what gets kept in R2 can't be left to the sender.
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+// Emails stored per Canberra day, across all senders. The real traffic
+// is a handful a month; past this it is spam, and each one stored is an
+// R2 write, a D1 row and an alert in the admin's inbox.
+const MAX_EMAILS_PER_DAY = 50;
 
 /**
  * A minimal HTML-to-text fallback for when a message has no plain text
@@ -32,12 +41,19 @@ export async function handleInboundEmail(message, env) {
     return;
   }
 
+  const underDailyCap = await checkGlobalRateLimit(env, 'inbound_email', MAX_EMAILS_PER_DAY, 'day').catch(() => true);
+  if (!underDailyCap) {
+    message.setReject('Too many messages today, try again tomorrow');
+    return;
+  }
+
   const parsed = await PostalMime.parse(message.raw);
 
   const textBody = parsed.text || (parsed.html ? stripHtml(parsed.html) : '') || '';
 
   const imageAttachments = (parsed.attachments || [])
     .filter((attachment) => (attachment.mimeType || '').startsWith('image/'))
+    .filter((attachment) => (attachment.content?.byteLength || 0) <= MAX_ATTACHMENT_BYTES)
     .slice(0, MAX_IMAGE_ATTACHMENTS);
 
   const storedAttachments = [];

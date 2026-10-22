@@ -4,7 +4,7 @@ import { eventCard } from './eventCard.js';
 import { config } from '../config.js';
 import { installPrompt } from './installPrompt.js';
 
-const PAST_LIMIT = 12;
+export const PAST_LIMIT = 12;
 
 /**
  * The home page: the board, section 7. Two columns of paper scraps,

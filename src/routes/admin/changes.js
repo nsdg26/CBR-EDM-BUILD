@@ -1,6 +1,6 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { changeListPage } from '../../templates/admin/changes.js';
-import { notFound } from '../../lib/http.js';
+import { adminNotFound } from './notFound.js';
 import { terrainFieldsFor } from '../../lib/geocode.js';
 import { pickFields, locationRevealedAtFor, EDIT_LINK_FIELDS, CREW_EDIT_FIELDS } from '../../lib/eventFields.js';
 
@@ -52,7 +52,7 @@ export async function handleChangeList(request, env, admin) {
  */
 export async function handleChangeApprove(request, env, admin, id) {
   const change = await env.DB.prepare('SELECT * FROM event_changes WHERE id = ?').bind(id).first();
-  if (!change) return notFound();
+  if (!change) return adminNotFound(admin);
   // A double-submitted Approve (or a stale tab) must not apply the change a
   // second time over whatever has been edited since.
   if (change.state !== 'pending') return Response.redirect(new URL('/admin/changes', request.url), 303);
@@ -70,7 +70,15 @@ export async function handleChangeApprove(request, env, admin, id) {
     const existing = await env.DB.prepare(
       'SELECT visibility, location_tba, location_revealed_at, venue_lat, venue_lng, elevation_grid FROM events WHERE id = ?',
     ).bind(change.event_id).first();
-    if (!existing) return notFound();
+    if (!existing) return adminNotFound(admin);
+    // Section 10.2: a published event keeps at least a title and a start.
+    // An edit link can send either back empty; approving that used to
+    // blank the live event, which then sat in "Coming up" with no date.
+    if (existing.visibility === 'published') {
+      for (const field of ['title', 'start_at']) {
+        if (field in proposed && !proposed[field]) delete proposed[field];
+      }
+    }
     const terrain = await terrainFieldsFor(proposed, existing);
     Object.assign(proposed, terrain, { location_revealed_at: locationRevealedAtFor(existing, proposed, now) });
 
@@ -94,7 +102,7 @@ export async function handleChangeApprove(request, env, admin, id) {
 
 export async function handleChangeReject(request, env, admin, id) {
   const change = await env.DB.prepare('SELECT id FROM event_changes WHERE id = ?').bind(id).first();
-  if (!change) return notFound();
+  if (!change) return adminNotFound(admin);
 
   await env.DB.prepare("UPDATE event_changes SET state = 'rejected', decided_at = ? WHERE id = ?")
     .bind(new Date().toISOString(), id).run();

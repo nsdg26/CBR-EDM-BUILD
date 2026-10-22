@@ -16,3 +16,18 @@ export function notFound() {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' },
   });
 }
+
+/**
+ * The page for an error the Worker didn't expect, section 12: the same
+ * shell as every other page, a 500, and nothing about what went wrong
+ * (that goes to the log, see src/index.js).
+ */
+export function serverError() {
+  const body = html`<h1>Something went wrong</h1>
+    <p>That didn't work. Try again in a minute.</p>
+    <p><a href="/">Back to the board</a></p>`;
+  return new Response(String(layout({ title: 'Something went wrong', bodyContent: body })), {
+    status: 500,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+}

@@ -27,7 +27,7 @@ export function crewListPage(crews) {
 /**
  * GET/POST /admin/crews/new and /admin/crews/:id/edit.
  * @param {object} crew
- * @param {{ newKey?: string }} [options] - newKey shown once, right after issuing/rotating
+ * @param {{ newKey?: string, errors?: string[] }} [options] - newKey shown once, right after issuing/rotating
  */
 export function crewFormPage(crew, options = {}) {
   const isNew = !crew.id;
@@ -37,6 +37,9 @@ export function crewFormPage(crew, options = {}) {
     <h1>${isNew ? 'Add a crew' : `Edit: ${crew.name}`}</h1>
     ${options.newKey
       ? html`<p class="error">New crew key (shown once, copy it now): <code>${options.newKey}</code></p>`
+      : ''}
+    ${options.errors?.length
+      ? html`<ul class="error field-error">${options.errors.map((error) => html`<li>${error}</li>`)}</ul>`
       : ''}
     <form method="post" action="${action}">
       <div class="field"><label for="name">Name</label><input type="text" id="name" name="name" value="${crew.name || ''}" required></div>

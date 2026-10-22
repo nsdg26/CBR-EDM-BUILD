@@ -37,14 +37,16 @@ export async function handleContactApi(request, env) {
 
   const formData = await request.formData();
 
+  // Field checks first, then the single-use Turnstile token: a rejected
+  // message used to cost the visitor a second check as well.
+  const message = (formData.get('message') || '').trim();
+  if (!message) return jsonResponse({ ok: false, error: 'Message is required.' }, 400);
+  if (message.length > 4000) return jsonResponse({ ok: false, error: 'That message is too long.' }, 400);
+
   const turnstileOk = await verifyTurnstile(
     formData.get('cf-turnstile-response'), env.TURNSTILE_SECRET_KEY, request.headers.get('CF-Connecting-IP'),
   );
   if (!turnstileOk) return jsonResponse({ ok: false, error: 'That check did not pass. Please try again.' }, 400);
-
-  const message = (formData.get('message') || '').trim();
-  if (!message) return jsonResponse({ ok: false, error: 'Message is required.' }, 400);
-  if (message.length > 4000) return jsonResponse({ ok: false, error: 'That message is too long.' }, 400);
 
   const name = (formData.get('name') || '').slice(0, 200) || null;
   const replyContact = (formData.get('reply_contact') || '').slice(0, 300) || null;

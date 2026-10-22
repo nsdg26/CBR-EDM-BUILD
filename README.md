@@ -43,10 +43,16 @@ cp .dev.vars.example .dev.vars
 ```
 
 `.dev.vars` is gitignored and never deployed. `DEV_BYPASS_ACCESS=true` only
-has any effect when running locally; production always requires a real,
-independently verified Access JWT (see `src/lib/auth.js`), and rejects the
-request if that verification fails for any reason, including a
-misconfigured Access application.
+has any effect when running locally, and the Worker only honours it on a
+local hostname (`localhost`, `127.0.0.1`, `*.localhost`); production always
+requires a real, independently verified Access JWT (see `src/lib/auth.js`),
+and rejects the request if that verification fails for any reason,
+including a misconfigured Access application.
+
+Admin form posts also have to come from the admin's own pages: a POST to
+`/admin/...` without a same-origin `Sec-Fetch-Site` or matching `Origin`
+header gets a 403. A browser sends those on every form post, so this only
+shows up if you drive the admin with `curl`; add `-H "Origin: http://localhost:8787"`.
 
 ## Owner setup checklist
 
@@ -93,11 +99,20 @@ with access to accounts, a card, and a domain registrar.
     allowing only the project mailbox to sign in via one-time PIN. Record the
     Access team domain and the application's audience (AUD) tag and put them
     in `wrangler.jsonc` (`vars.ACCESS_TEAM_DOMAIN`, `vars.ACCESS_AUD`).
+    In the application's advanced settings, under cookie settings, set the
+    **SameSite attribute to Lax**: Access leaves it unset by default, which
+    sends the sign-in cookie on requests other sites start. The Worker
+    refuses admin form posts that don't come from the admin itself
+    anyway (`src/routes/admin/router.js`), so this is belt and braces.
 11. **Web Analytics.** Enable it for the domain in the dashboard.
 12. **Workers Builds.** Connect it to the GitHub repo so pushes to `main`
     deploy automatically.
 13. **Custom domain.** Attach it to the Worker once everything above is in
-    place.
+    place. `wrangler.jsonc` sets `workers_dev: false`, so the Worker only
+    answers on its own domains and not on the `*.workers.dev` address
+    Cloudflare gives every Worker (which would sit outside Access and
+    outside Turnstile's hostname list). If you ever need that address for
+    a test, flip the setting and deploy, then flip it back.
 14. **Admin on its own address (admin.cbrdance.org).** So the admin app
     and the public app can both be installed on one phone (see
     `src/lib/hosts.js` for why they can't share a domain). Safe to leave
@@ -131,6 +146,11 @@ automatically. To deploy manually instead:
 ```bash
 npm run deploy
 ```
+
+`wrangler.jsonc` also sets a nightly cron trigger. It runs the Worker's
+`scheduled` handler (`src/index.js`), which deletes rate-limit rows older
+than two days. Nothing to set up: Workers Builds deploys the trigger with
+the Worker.
 
 Run migrations against the real database separately and deliberately:
 

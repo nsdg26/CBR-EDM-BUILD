@@ -34,21 +34,38 @@
   "vars": {
     "ACCESS_TEAM_DOMAIN": "empty-firefly-d848.cloudflareaccess.com",
     "ACCESS_AUD": "7079c0ab3788691b08159eb7dcfc88cce0836518d9e6e641976c0d4446306873",
-    // This is Cloudflare's published "always passes" Turnstile test site key,
-    // so local dev and preview deploys work out of the box. Replace with the
-    // real site key from step 9 before going live.
+    // The widget's site key (public by nature; the secret key is a Worker
+    // secret, README step 9). Cloudflare's "always passes" test pair is
+    // site key 1x00000000000000000000AA with the secret in
+    // .dev.vars.example; a key starting 0x4 is a real one. Make sure the
+    // deployed TURNSTILE_SECRET_KEY secret is the real one too: the test
+    // secret accepts any token.
     "TURNSTILE_SITE_KEY": "0x4AAAAAAEyZpRNG0EzCAKcn",
     // Must be the same address as the send_email destination_address above.
     "ADMIN_EMAIL": "cbredmadmin@gmail.com",
     // Any random string. Only used to salt rate-limit hashes; rotating it
     // just resets rate-limit history, it does not need to be memorable.
-    "RATE_LIMIT_SALT": "REPLACE_WITH_A_RANDOM_STRING",
+    // It is what stops the hashed IPs in rate_limits being reversed if
+    // the database is ever exported, so it must not be a guessable
+    // placeholder. Generated with: openssl rand -hex 24
+    "RATE_LIMIT_SALT": "f474a9f13c3645298077ec4dc23150e080b6aa8f2b48d740",
     // The admin panel's own hostname (src/lib/hosts.js). Empty = off:
     // /admin keeps working on cbrdance.org and cbredm.org as it always
     // has. Set to "admin.cbrdance.org" only once that hostname is added to
     // the Worker and to the Access application (README, step 10), and
     // /admin on the other hostnames redirects there.
     "ADMIN_HOST": ""
+  },
+  // The site answers only on its own domains (README step 13), never on
+  // the *.workers.dev address Cloudflare gives every Worker: that address
+  // sits outside the Access application, outside Turnstile's hostname
+  // list, and would be a second copy of the site for search engines.
+  "workers_dev": false,
+  // Nightly housekeeping (src/index.js scheduled): deletes expired
+  // rate_limits rows. 17 minutes past 3am UTC, which is early afternoon
+  // Canberra time, a quiet hour for a site about nights out.
+  "triggers": {
+    "crons": ["17 3 * * *"]
   },
   "observability": {
     "enabled": true

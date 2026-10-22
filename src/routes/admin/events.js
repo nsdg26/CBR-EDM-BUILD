@@ -1,10 +1,11 @@
 import { adminLayout } from '../../templates/admin/layout.js';
 import { eventListPage, eventFormPage } from '../../templates/admin/events.js';
-import { generateId, eventSlugFor } from '../../lib/ids.js';
+import { generateId } from '../../lib/ids.js';
 import { utcToCanberraLocalInput } from '../../lib/dates.js';
-import { readEventFields, locationRevealedAtFor } from '../../lib/eventFields.js';
+import { readEventFields, validateEventFields, publishedFieldErrors, locationRevealedAtFor } from '../../lib/eventFields.js';
+import { insertEventWithSlug } from '../../lib/eventInsert.js';
 import { generateToken, hashToken } from '../../lib/tokens.js';
-import { notFound } from '../../lib/http.js';
+import { adminNotFound } from './notFound.js';
 import { resolveTemplate } from '../../flyers/manifest.js';
 import { normaliseEvent } from '../../flyers/normalise.js';
 import { terrainFieldsFor } from '../../lib/geocode.js';
@@ -67,24 +68,47 @@ export async function handleEventEditForm(request, env, admin, id) {
   const event = await env.DB.prepare(
     'SELECT events.*, crews.name AS crew_name FROM events LEFT JOIN crews ON crews.id = events.crew_id WHERE events.id = ?',
   ).bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
   const crews = await getCrews(env);
   const fromEmail = new URL(request.url).searchParams.get('from_email');
   return page(admin, `Edit: ${event.title || 'Untitled'}`, eventFormPage(eventForForm(event), crews, { fromEmailId: fromEmail }));
 }
 
 /**
- * POST /admin/events/new
+ * The posted form as the form page can show it back, with the typed
+ * local times kept as typed, when validation sends it back with errors.
+ * @param {FormData} formData
+ * @param {object} fields
+ * @param {object} [existing]
+ */
+function formEcho(formData, fields, existing = {}) {
+  return {
+    ...existing,
+    ...fields,
+    start_at_local: formData.get('start_at_local') || '',
+    end_at_local: formData.get('end_at_local') || '',
+  };
+}
+
+/**
+ * POST /admin/events/new. The same length, enum and URL checks the
+ * public forms run: an out-of-range status or age restriction used to
+ * reach the INSERT and fail there as a 500.
  */
 export async function handleEventCreate(request, env, admin) {
   const formData = await request.formData();
   const fields = readEventFields(formData);
+  const errors = validateEventFields(fields);
+  if (errors.length) {
+    const crews = await getCrews(env);
+    return page(admin, 'Add an event', eventFormPage(formEcho(formData, fields), crews, { errors }));
+  }
+
   const now = new Date().toISOString();
   const id = generateId('evt');
-  const slug = eventSlugFor(fields.title, fields.start_at);
   const terrain = await terrainFieldsFor(fields);
 
-  await env.DB.prepare(
+  await insertEventWithSlug((slug) => env.DB.prepare(
     `INSERT INTO events (id, slug, title, crew_id, presented_by, start_at, end_at, venue_name, venue_address,
        location_tba, location_reveal_at, location_how_to_find, genres, lineup, lineup_equal_billing, ticket_url, notes,
        age_restriction, status, visibility, source, sequence, created_at, updated_at,
@@ -96,7 +120,7 @@ export async function handleEventCreate(request, env, admin) {
     fields.location_how_to_find, fields.genres, fields.lineup, fields.lineup_equal_billing, fields.ticket_url,
     fields.notes, fields.age_restriction, fields.status, now, now,
     terrain.venue_lat, terrain.venue_lng, terrain.elevation_grid,
-  ).run();
+  ), fields.title, fields.start_at);
 
   return Response.redirect(new URL(`/admin/events/${id}/edit`, request.url), 303);
 }
@@ -106,12 +130,18 @@ export async function handleEventCreate(request, env, admin) {
  */
 export async function handleEventUpdate(request, env, admin, id) {
   const event = await env.DB.prepare(
-    'SELECT visibility, location_tba, location_revealed_at, venue_lat, venue_lng, elevation_grid FROM events WHERE id = ?',
+    'SELECT * FROM events WHERE id = ?',
   ).bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
 
   const formData = await request.formData();
   const fields = readEventFields(formData);
+  // Section 10.2: a published event keeps at least its title and start.
+  const errors = [...validateEventFields(fields), ...publishedFieldErrors(event, fields)];
+  if (errors.length) {
+    const crews = await getCrews(env);
+    return page(admin, `Edit: ${event.title || 'Untitled'}`, eventFormPage(formEcho(formData, fields, event), crews, { errors }));
+  }
   const now = new Date().toISOString();
   const terrain = await terrainFieldsFor(fields, event);
   // SPEC.md section 5: sequence bumps on every published change, so a
@@ -175,7 +205,7 @@ export async function freezeFlyerTemplate(env, event) {
  */
 export async function handleEventPublish(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
 
   if (!event.title || !event.start_at) {
     const crews = await getCrews(env);
@@ -198,7 +228,7 @@ export async function handleEventPublish(request, env, admin, id) {
 function simpleVisibilityChange(newVisibility) {
   return async (request, env, admin, id) => {
     const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(id).first();
-    if (!event) return notFound();
+    if (!event) return adminNotFound(admin);
     await env.DB.prepare('UPDATE events SET visibility = ?, updated_at = ? WHERE id = ?')
       .bind(newVisibility, new Date().toISOString(), id).run();
     return Response.redirect(new URL(`/admin/events/${id}/edit`, request.url), 303);
@@ -224,7 +254,7 @@ export async function handleEventRestore(request, env, admin, id) {
  */
 export async function handleEventReissueEditLink(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
 
   const token = generateToken();
   const tokenHash = await hashToken(token);
@@ -238,7 +268,7 @@ export async function handleEventReissueEditLink(request, env, admin, id) {
 
 export async function handleEventRevokeEditLink(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
 
   await env.DB.prepare('UPDATE events SET edit_token_hash = NULL, updated_at = ? WHERE id = ?')
     .bind(new Date().toISOString(), id).run();
@@ -253,7 +283,7 @@ export async function handleEventRevokeEditLink(request, env, admin, id) {
  */
 export async function handleEventRerollFlyer(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
   await env.DB.prepare('UPDATE events SET seed_salt = seed_salt + 1 WHERE id = ?').bind(id).run();
   return Response.redirect(new URL(`/admin/events/${id}/edit`, request.url), 303);
 }
@@ -264,7 +294,7 @@ export async function handleEventRerollFlyer(request, env, admin, id) {
  */
 export async function handleEventSetFlyerTemplate(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
   const formData = await request.formData();
   const value = formData.get('flyer_template') || null;
   await env.DB.prepare('UPDATE events SET flyer_template = ? WHERE id = ?').bind(value, id).run();
@@ -282,7 +312,7 @@ export async function handleEventSetFlyerTemplate(request, env, admin, id) {
  */
 export async function handleEventDelete(request, env, admin, id) {
   const event = await env.DB.prepare('SELECT id FROM events WHERE id = ?').bind(id).first();
-  if (!event) return notFound();
+  if (!event) return adminNotFound(admin);
 
   await env.DB.batch([
     env.DB.prepare('DELETE FROM event_changes WHERE event_id = ?').bind(id),

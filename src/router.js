@@ -26,8 +26,10 @@ import { isAdminHost, isAdminPath, publicOriginFor, adminRedirectFor } from './l
  * Simple path-based router. Section 6 lists every route.
  * @param {Request} request
  * @param {import('./env.js').Env} env
+ * @param {ExecutionContext} [ctx] - handed to the routes that count a
+ *   view, so the count runs after the response (lib/analytics.js)
  */
-export async function router(request, env) {
+export async function router(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
@@ -36,13 +38,13 @@ export async function router(request, env) {
   const adminRedirect = adminRedirectFor(request, env);
   if (adminRedirect) return Response.redirect(adminRedirect, 302);
 
-  if (path === '/') return handleHome(request, env);
+  if (path === '/') return handleHome(request, env, ctx);
   if (path === '/admin' || path.startsWith('/admin/')) return adminRouter(request, env);
   if (path === '/robots.txt') return handleRobots();
   if (path === '/manifest.webmanifest') return handleManifest();
   if (path === '/manifest-admin.webmanifest') return handleAdminManifest();
-  if (path === '/calendar.ics') return handleCalendarFeed(request, env);
-  if (path === '/calendar') return handleCalendarPage(request, env);
+  if (path === '/calendar.ics') return handleCalendarFeed(request, env, ctx);
+  if (path === '/calendar') return handleCalendarPage(request, env, ctx);
   if (path === '/look-after-each-other') return handleHarmReduction(request, env);
   if (path === '/archive') return handleArchive(request, env);
 
@@ -88,13 +90,13 @@ export async function router(request, env) {
   if (path === '/api/contact' && method === 'POST') return handleContactApi(request, env);
 
   const eventIcs = path.match(/^\/e\/([^/]+)\.ics$/);
-  if (eventIcs) return handleEventIcs(request, env, eventIcs[1]);
+  if (eventIcs) return handleEventIcs(request, env, eventIcs[1], ctx);
 
   const eventSlug = path.match(/^\/e\/([^/]+)$/);
-  if (eventSlug) return handleEventPage(request, env, eventSlug[1]);
+  if (eventSlug) return handleEventPage(request, env, eventSlug[1], ctx);
 
   const goEventId = path.match(/^\/go\/([^/]+)$/);
-  if (goEventId) return handleGo(request, env, goEventId[1]);
+  if (goEventId) return handleGo(request, env, goEventId[1], ctx);
 
   const flyerEventId = path.match(/^\/flyer\/([^/]+)\.svg$/);
   if (flyerEventId) return handleFlyer(request, env, flyerEventId[1]);

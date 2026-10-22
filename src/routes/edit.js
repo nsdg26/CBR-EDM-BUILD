@@ -1,7 +1,7 @@
 import { layout } from '../templates/layout.js';
 import { editPage } from '../templates/edit.js';
 import { hashToken } from '../lib/tokens.js';
-import { readEventFields, validateEventFields, pickFields, EDIT_LINK_FIELDS } from '../lib/eventFields.js';
+import { readEventFields, validateEventFields, publishedFieldErrors, pickFields, EDIT_LINK_FIELDS } from '../lib/eventFields.js';
 import { generateId } from '../lib/ids.js';
 import { utcToCanberraLocalInput } from '../lib/dates.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
@@ -41,7 +41,7 @@ export async function handleEditLoad(request, env) {
   if (!allowed) return jsonResponse({ ok: false, error: 'Too many attempts. Try again later.' }, 429);
 
   const { token } = await request.json().catch(() => ({}));
-  const event = await findEventByToken(env, token);
+  const event = await findEventByToken(env, typeof token === 'string' ? token : null);
   if (!event) return jsonResponse({ ok: false, error: 'Edit link not found or no longer valid.' }, 404);
   if (event.visibility === 'removed' || event.visibility === 'rejected') {
     return jsonResponse({ ok: false, error: 'This listing is no longer active. Contact the admin if you need help.' }, 410);
@@ -88,18 +88,22 @@ export async function handleEditUpdate(request, env) {
   }
 
   const fields = readEventFields(formData);
-  const errors = validateEventFields(fields);
+  // A published listing keeps at least its title and start (section
+  // 10.2), so an edit that clears either is refused here rather than
+  // queued for an admin to approve by mistake.
+  const errors = [...validateEventFields(fields), ...publishedFieldErrors(event, fields)];
   if (errors.length) return jsonResponse({ ok: false, error: errors[0] }, 400);
 
-  const venueCheck = await checkVenueRealness(fields);
-  if (!venueCheck.skip && !venueCheck.ok) {
+  // See handleSubmissionApi: an unanswered geocoder lets the edit through.
+  const venueCheck = await checkVenueRealness(fields, env);
+  if (!venueCheck.skip && !venueCheck.ok && !venueCheck.unavailable) {
     return jsonResponse({ ok: false, error: venueNotFoundMessage(fields) }, 400);
   }
 
   const now = new Date().toISOString();
 
   if (event.visibility === 'pending') {
-    const terrain = await terrainFieldsFor(fields, event, venueCheck.skip ? undefined : venueCheck.location);
+    const terrain = await terrainFieldsFor(fields, event, venueCheck.skip ? undefined : venueCheck.location || null);
     await env.DB.prepare(
       `UPDATE events SET title = ?, presented_by = ?, start_at = ?, end_at = ?, venue_name = ?, venue_address = ?,
          location_tba = ?, location_reveal_at = ?, location_how_to_find = ?, genres = ?,
@@ -128,7 +132,7 @@ function requestHandler(kind) {
     if (!allowed) return jsonResponse({ ok: false, error: 'Too many attempts. Try again later.' }, 429);
 
     const { token, reason } = await request.json().catch(() => ({}));
-    const event = await findEventByToken(env, token);
+    const event = await findEventByToken(env, typeof token === 'string' ? token : null);
     if (!event) return jsonResponse({ ok: false, error: 'Edit link not found or no longer valid.' }, 404);
     if (event.visibility === 'removed' || event.visibility === 'rejected') {
       return jsonResponse({ ok: false, error: 'This listing is no longer active.' }, 410);
@@ -136,7 +140,7 @@ function requestHandler(kind) {
 
     await env.DB.prepare(
       'INSERT INTO event_changes (id, event_id, kind, reason, via, state, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    ).bind(generateId('chg'), event.id, `${kind}_request`, (reason || '').slice(0, 1000) || null, 'edit_link', 'pending', new Date().toISOString()).run();
+    ).bind(generateId('chg'), event.id, `${kind}_request`, (typeof reason === 'string' ? reason : '').slice(0, 1000) || null, 'edit_link', 'pending', new Date().toISOString()).run();
 
     return jsonResponse({ ok: true });
   };
