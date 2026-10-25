@@ -4,11 +4,13 @@ import { eventCard } from './eventCard.js';
 import { config } from '../config.js';
 import { installPrompt } from './installPrompt.js';
 
-export const PAST_LIMIT = 12;
-
 /**
- * The home page: the board, section 7. Two columns of paper scraps,
- * coming up and past.
+ * The home page: the board, section 7. One column of paper scraps, the
+ * events coming up.
+ *
+ * Owner decision: past events used to fill a second column here (the
+ * most recent dozen, with a link to the archive for the rest). They moved
+ * to /past, which shows them directly, and the board is upcoming only.
  *
  * The month calendar used to sit beside this in a desktop grid, with a
  * Board/Calendar toggle standing in for it on narrow screens. Owner
@@ -23,12 +25,6 @@ export function homePage(events, now = new Date()) {
     .filter((event) => !isEventPast(event, now))
     .sort((a, b) => new Date(a.start_at || 0) - new Date(b.start_at || 0));
 
-  const past = events
-    .filter((event) => isEventPast(event, now))
-    .sort((a, b) => new Date(b.start_at || 0) - new Date(a.start_at || 0));
-
-  const pastShown = past.slice(0, PAST_LIMIT);
-
   const body = html`
     <div class="board">
       <div class="board-column">
@@ -37,14 +33,8 @@ export function homePage(events, now = new Date()) {
           ? html`<ul>${upcoming.map((event) => eventCard(event, now))}</ul>`
           : emptyUpcoming()}
       </div>
-      <div class="board-column">
-        <h2>${config.boardColumns.past}</h2>
-        ${pastShown.length
-          ? html`<ul>${pastShown.map((event) => eventCard(event, now))}</ul>`
-          : ''}
-        ${past.length > PAST_LIMIT ? html`<p><a href="/archive">See the full archive</a></p>` : ''}
-      </div>
     </div>
+    <p class="board-more"><a href="/past">${config.boardColumns.past}</a></p>
   `;
 
   // The install notice, see templates/installPrompt.js.

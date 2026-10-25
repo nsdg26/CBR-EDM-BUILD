@@ -1,5 +1,5 @@
 import { layout } from '../templates/layout.js';
-import { homePage, PAST_LIMIT } from '../templates/home.js';
+import { homePage } from '../templates/home.js';
 import { countInBackground, isBotRequest } from '../lib/analytics.js';
 
 const EVENT_SELECT = `
@@ -9,18 +9,16 @@ const EVENT_SELECT = `
 
 // Section 3.5: an event with no end time is past from 6am the morning
 // after it starts, so anything that started more than two days ago and
-// has no end time still in the future is certainly past. The board only
-// needs the most recent dozen of those; the archive has the rest.
+// has no end time still in the future is certainly past, and the board
+// (upcoming only) never needs it.
 const RECENT_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
 
 /**
  * GET /. Section 6 and 7: the board.
  *
- * Two bounded queries rather than every published event ever (which this
- * used to load, elevation grids and all, and render a flyer for, before
- * keeping twelve of the past ones): the events that could still be
- * coming up, and the most recent past ones. homePage still decides
- * past/upcoming exactly, at render time, from the rows it is given.
+ * One bounded query: the events that could still be coming up. homePage
+ * still decides past/upcoming exactly, at render time, from the rows it
+ * is given. Past events live on /past.
  *
  * The ?month= parameter this used to take belonged to the calendar that
  * sat beside the board; it moved to /calendar with it. A stale link
@@ -35,23 +33,10 @@ export async function handleHome(request, env, ctx) {
   const nowIso = now.toISOString();
   const windowStart = new Date(now.getTime() - RECENT_WINDOW_MS).toISOString();
 
-  const [current, recentPast] = await Promise.all([
-    env.DB.prepare(
-      `${EVENT_SELECT} AND (events.start_at IS NULL OR events.start_at >= ? OR events.end_at >= ?)
-       ORDER BY events.start_at`,
-    ).bind(windowStart, nowIso).all(),
-    env.DB.prepare(
-      `${EVENT_SELECT} AND events.start_at < ? AND (events.end_at IS NULL OR events.end_at < ?)
-       ORDER BY events.start_at DESC LIMIT ?`,
-    ).bind(windowStart, nowIso, PAST_LIMIT + 1).all(),
-  ]);
-
-  const seen = new Set();
-  const events = [...current.results, ...recentPast.results].filter((event) => {
-    if (seen.has(event.id)) return false;
-    seen.add(event.id);
-    return true;
-  });
+  const { results: events } = await env.DB.prepare(
+    `${EVENT_SELECT} AND (events.start_at IS NULL OR events.start_at >= ? OR events.end_at >= ?)
+     ORDER BY events.start_at`,
+  ).bind(windowStart, nowIso).all();
 
   if (!isBotRequest(request)) await countInBackground(ctx, env, 'home_view');
 

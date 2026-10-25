@@ -1,6 +1,6 @@
 import { handleHome } from './routes/home.js';
 import { handleEventPage, handleEventIcs } from './routes/event.js';
-import { handleArchive } from './routes/archive.js';
+import { handlePast } from './routes/past.js';
 import { handleHarmReduction } from './routes/harmReduction.js';
 import { handleCalendarFeed } from './routes/calendarFeed.js';
 import { handleCalendarPage } from './routes/calendar.js';
@@ -46,10 +46,16 @@ export async function router(request, env, ctx) {
   if (path === '/calendar.ics') return handleCalendarFeed(request, env, ctx);
   if (path === '/calendar') return handleCalendarPage(request, env, ctx);
   if (path === '/look-after-each-other') return handleHarmReduction(request, env);
-  if (path === '/archive') return handleArchive(request, env);
+  if (path === '/past') return handlePast(request, env);
 
-  const archiveYear = path.match(/^\/archive\/(\d{4})$/);
-  if (archiveYear) return handleArchive(request, env, Number(archiveYear[1]));
+  const pastYear = path.match(/^\/past\/(\d{4})$/);
+  if (pastYear) return handlePast(request, env, Number(pastYear[1]));
+
+  // The past events pages used to be the archive, at /archive. Old links,
+  // bookmarks and search results land on the same page at its new address.
+  if (path === '/archive' || /^\/archive\/\d{4}$/.test(path)) {
+    return Response.redirect(new URL(path.replace(/^\/archive/, '/past'), request.url), 301);
+  }
 
   if (path === '/submit' && method === 'GET') return handleSubmitForm(request, env);
   if (path === '/submit/confirmation' && method === 'GET') return handleSubmitConfirmation(request, env);
