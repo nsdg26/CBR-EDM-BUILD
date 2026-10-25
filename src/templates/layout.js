@@ -5,7 +5,7 @@ function navLinks() {
   return [
     ['/submit', 'Submit an event'],
     ['/crews', 'Crews'],
-    ['/archive', 'Archive'],
+    ['/past', config.boardColumns.past],
     ['/look-after-each-other', config.harmReductionTitle],
     ['/contact', 'Get in touch'],
     ['/calendar', 'Calendar'],
@@ -13,8 +13,8 @@ function navLinks() {
 }
 
 /**
- * Whether a nav link is the page being shown, or a page under it (an
- * archive year under /archive, a crew's profile under /crews).
+ * Whether a nav link is the page being shown, or a page under it (a
+ * year under /past, a crew's profile under /crews).
  * @param {string} href
  * @param {string} [path]
  */

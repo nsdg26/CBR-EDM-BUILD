@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+- The home page shows upcoming events only. Past events moved off it to
+  the Archive page, renamed **Past events** and moved to `/past`, which
+  now lists the most recent 24 past events directly (then links to each
+  year) instead of only a list of years. `/archive` and `/archive/:year`
+  redirect permanently to their `/past` equivalents.
+
 ### Security
 - Admin form posts are refused unless they come from the admin itself
   (`Sec-Fetch-Site: same-origin`, or an `Origin` matching the request).

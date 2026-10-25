@@ -329,7 +329,7 @@ Rate limiting can use the Workers Rate Limiting binding if available on the plan
 | `GET /e/:slug` | Event page | 1 |
 | `GET /e/:slug.ics` | Add single event to calendar | 1 |
 | `GET /calendar.ics` | Subscribable feed | 1 |
-| `GET /archive` and `/archive/:year` | Full past events archive | 1 |
+| `GET /past` and `/past/:year` | Past events: the most recent 24, then by year (`/archive` redirects here) | 1 |
 | `GET /look-after-each-other` | Harm reduction page | 1 |
 | `GET /img/:key` | Serve flyer images from R2 (only for non-removed events) | 1 |
 | `GET /go/:eventId` | Counted redirect to the stored ticket URL | 1 |
@@ -351,9 +351,7 @@ Every page footer contains: harm reduction link, contact link (phase 2), submit 
 
 ### 7.1 Structure
 1. **Header:** site name and the slogan. This is the single boldest design element on the site (see section 13).
-2. **Board:** two columns.
-   - **Coming up:** published events that are not past, soonest first.
-   - **Been and gone:** past published events, most recent first. Shows the most recent 12, then a link to the full archive.
+2. **Board:** one column, **Coming up**: published events that are not past, soonest first, with a link to Past events underneath. Past events (most recent first) are on `/past`, not the home page (owner decision, October 2026).
 3. **Calendar:** month grid for the current month, with previous and next month controls. Days with events are marked. Selecting a day shows that day's events (as links to event pages). Past months remain browsable all the way back to the first event.
 4. **Footer.**
 
