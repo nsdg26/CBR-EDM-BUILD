@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- GitHub Actions runs `npm test` on every pull request and every push to
+  `main` (`.github/workflows/test.yml`).
+
 ### Changed
 - The home page shows upcoming events only. Past events moved off it to
   the Archive page, renamed **Past events** and moved to `/past`, which
